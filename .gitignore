@@ -1,7 +1,18 @@
+# Generated makefile
+Makefile
+
 # Compiled Object files
 *.slo
 *.lo
 *.o
+*.a
+*.la
+
+# generated files
+
+moc_*.cpp
+ui_*.cpp
+qrc_*.cpp
 
 # Compiled Dynamic libraries
 *.so
@@ -11,3 +22,13 @@
 *.lai
 *.la
 *.a
+
+
+#autosave
+*.autosave
+*~
+.*.sw*
+
+#project user configurations
+
+*.pro.user

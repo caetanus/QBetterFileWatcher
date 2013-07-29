@@ -6,15 +6,30 @@
 
 QT       -= gui
 
+UNAME = $$system(uname -a)
+!win32:!macx{
+ contains(UNAME, Linux): CONFIG += linux
+}
+
 TARGET = QBetterFileWatcher
 TEMPLATE = lib
 CONFIG += staticlib
 
-SOURCES += QBetterFileWatcher.cpp \
-    LinuxFileWatcher.cpp
+DEPENDPATH += src
 
-HEADERS += QBetterFileWatcher.h \
-    LinuxFileWatcher.h
+linux {
+    DEPENDPATH += src/linux
+    SOURCES += src/linux/inotifyfilewatcher.cpp
+    HEADERS += src/linux/inotifyfilewatcher.h
+}
+
+SOURCES += src/qbetterfilewatcher.cpp
+
+
+HEADERS += src/qbetterfilewatcher.h
+
+INCLUDEPATH += src
+
 unix:!symbian {
     maemo5 {
         target.path = /opt/usr/lib

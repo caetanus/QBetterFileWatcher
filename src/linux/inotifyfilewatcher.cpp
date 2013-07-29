@@ -30,17 +30,8 @@ InotifyFileWatcher::InotifyFileWatcher() :
 void InotifyFileWatcher::fetchSubDirectories(QString path)
 {
     QDir dpath(QDir(path).absolutePath());
-    foreach(QString dir, dpath.entryList())
-    {
-        if (dir == QString(".") || dir == QString(".."))
-            continue;
-        QString fullPath = path + QDir::separator() + dir;
-        if(QDir(fullPath).exists())
-        {
-            watchDirectory(fullPath, true);
-        }
-    }
-
+    foreach(QString dir, dpath.entryList(QDir::Dirs | QDir::NoDotAndDotDot))
+        watchDirectory(path + QDir::separator() + dir, true);
 }
 
 bool InotifyFileWatcher::watchDirectory(QString path, bool child)

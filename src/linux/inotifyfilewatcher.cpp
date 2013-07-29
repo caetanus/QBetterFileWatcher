@@ -30,8 +30,12 @@ InotifyFileWatcher::InotifyFileWatcher() :
 void InotifyFileWatcher::fetchSubDirectories(QString path)
 {
     QDir dpath(QDir(path).absolutePath());
-    foreach(QString dir, dpath.entryList(QDir::Dirs | QDir::NoDotAndDotDot))
+
+    foreach(QString dir, dpath.entryList(QDir::Dirs | QDir::Hidden |
+                                         QDir::System | QDir::NoDotAndDotDot))
+    {
         watchDirectory(path + QDir::separator() + dir, true);
+    }
 }
 
 bool InotifyFileWatcher::watchDirectory(QString path, bool child)

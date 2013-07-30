@@ -189,7 +189,7 @@ void InotifyFileWatcher::eventCallback()
                 }
 
             }
-            else if ((event->mask & IN_DELETE) || (event->mask && IN_DELETE_SELF))
+            else if ((event->mask & IN_DELETE) || (event->mask & IN_DELETE_SELF))
             {
                 if (event->mask & IN_ISDIR)
                 {

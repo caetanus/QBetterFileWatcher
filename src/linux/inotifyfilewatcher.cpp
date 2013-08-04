@@ -25,6 +25,10 @@ InotifyFileWatcher::InotifyFileWatcher() :
         perror("inotify_init");
         abort();
     }
+    m_notifier = new QSocketNotifier(m_fd, QSocketNotifier::Read);
+    m_notifier->setEnabled(false);
+    connect(m_notifier, SIGNAL(activated(int)), this, SLOT(eventCallback()));
+
 }
 
 void InotifyFileWatcher::fetchSubDirectories(QString path)
@@ -87,23 +91,14 @@ bool InotifyFileWatcher::unwatchDirectory(QString path)
     return true;
 }
 
-bool InotifyFileWatcher::start()
+void InotifyFileWatcher::start()
 {
-    if (m_notifier)
-        return false;
-    m_notifier = new QSocketNotifier(m_fd, QSocketNotifier::Read);
-    connect(m_notifier, SIGNAL(activated(int)), this, SLOT(eventCallback()));
-    return true;
+    m_notifier->setEnabled(true);
 }
 
-bool InotifyFileWatcher::stop()
+void InotifyFileWatcher::stop()
 {
-    if (!m_notifier)
-        return false;
-    disconnect(m_notifier, SIGNAL(activated(int)), this, SLOT(eventCallback()));
-    delete m_notifier;
-    m_notifier = 0;
-    return true;
+    m_notifier->setEnabled(false);
 }
 
 
@@ -172,6 +167,9 @@ void InotifyFileWatcher::eventCallback()
 }
 InotifyFileWatcher::~InotifyFileWatcher()
 {
+    m_directoryHandles.clear();
+    m_handlesDirectory.clear();
     stop();
+    delete m_notifier;
     close(m_fd);
 }

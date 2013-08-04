@@ -9,11 +9,17 @@ include(../../QBetterFileWatcher.prf)
 QT       += core
 QT       -= gui
 
-TARGET = $$PWD/../../builds/TestCreateFile
+TARGET = $$PWD/../../builds/TestWatcher
 CONFIG   += console
 CONFIG   -= app_bundle
 
 TEMPLATE = app
 
 
-SOURCES += main.cpp
+SOURCES += main.cpp \
+    TestCreateFile.cpp \
+    TestBase.cpp
+
+HEADERS += \
+    TestCreateFile.h \
+    TestBase.h

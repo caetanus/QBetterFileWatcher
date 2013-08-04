@@ -53,7 +53,7 @@ class InotifyFileWatcher : public QObject
     Q_OBJECT
     char m_buffer[EVENT_BUF_LEN];
     int m_fd;
-    QSocketNotifier* m_notifier;
+    QSocketNotifier *m_notifier;
     QMap<int, QString> m_handlesDirectory;
     QMap<QString, int> m_directoryHandles;
     void fetchSubDirectories(QString path);
@@ -63,8 +63,8 @@ class InotifyFileWatcher : public QObject
     }
 public:
     explicit InotifyFileWatcher();
-    bool start();
-    bool stop();
+    void start();
+    void stop();
     bool watchDirectory(QString path, bool child=false);
     bool unwatchDirectory(QString path);
     QList<QString> directoriesWatching();

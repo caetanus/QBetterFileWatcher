@@ -41,7 +41,7 @@ public:
    MyWatcher()
   {
     m_myWatcher.watchDirectory("path-to-directory");
-    connect(m_myWatcher, SIGNAL(fileCreated(QString)), this, SLOT(onFileCreated(QString)));
+    connect(&m_myWatcher, SIGNAL(fileCreated(QString)), this, SLOT(onFileCreated(QString)));
     m_myWatcher.start();
   }
 

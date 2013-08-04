@@ -1,0 +1,13 @@
+!win32:!macx{
+ UNAME = $$system(uname -a)
+ contains(UNAME, Linux): CONFIG += linux
+}
+
+INCLUDEPATH += $$PWD/include
+
+linux {
+    INCLUDEPATH += $$PWD/include/linux
+}
+
+win32::LIBS += $$PWD/lib/libQBetterFileWatcher.a
+unix::LIBS += -L$$PWD/lib -lQBetterFileWatcher

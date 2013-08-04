@@ -6,27 +6,30 @@
 
 QT       -= gui
 
-UNAME = $$system(uname -a)
 !win32:!macx{
+ UNAME = $$system(uname -a)
  contains(UNAME, Linux): CONFIG += linux
 }
 
-TARGET = QBetterFileWatcher
+TARGET = lib/QBetterFileWatcher
 TEMPLATE = lib
 CONFIG += staticlib
 
-DEPENDPATH += src
+DEPENDPATH += src include
+INCLUDEPATH += include
+
 
 linux {
-    DEPENDPATH += src/linux
+    INCLUDEPATH += include/linux
+    DEPENDPATH += src/linux include/linux
     SOURCES += src/linux/inotifyfilewatcher.cpp
-    HEADERS += src/linux/inotifyfilewatcher.h
+    HEADERS += include/linux/inotifyfilewatcher.h
 }
 
 SOURCES += src/qbetterfilewatcher.cpp
 
 
-HEADERS += src/qbetterfilewatcher.h
+HEADERS += include/qbetterfilewatcher.h
 
 INCLUDEPATH += src
 
@@ -38,3 +41,6 @@ unix:!symbian {
     }
     INSTALLS += target
 }
+
+OTHER_FILES += \
+    QBetterFileWatcher.prf

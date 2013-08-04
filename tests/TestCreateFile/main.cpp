@@ -42,7 +42,6 @@ public:
     CreateFileTestCase()
     {
         m_fwatcher = NULL;
-        connect(&timeout, SIGNAL(timeout()), this, SLOT(stopTest()));
     }
     void setUp()
     {
@@ -61,6 +60,7 @@ public:
     }
     void runTests()
     {
+        timeout.singleShot(300, this, SLOT(stopTest()));
         const int numberOfFiles = 1024;
         qDebug() << "creating " << numberOfFiles;
         for (int i = 0; i < numberOfFiles; i++)
@@ -83,7 +83,7 @@ public slots:
         else
         {
             qDebug() << "Failed";
-            qDebug() << "Missing Events: " << selfEvents.keys();
+            //qDebug() << "Missing Events: " << selfEvents.keys();
 
         }
         foreach(QString file, deltaEvents.keys())

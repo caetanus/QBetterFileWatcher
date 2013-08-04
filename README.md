@@ -29,7 +29,7 @@ include(QBetterFileWatcher.prf)
 
 #include <QBetterFileWatcher>
 
-class MyWatcher: Public QObject 
+class MyWatcher: public QObject 
 {
   Q_OBJECT
   QBetterFileWatcher m_myWatcher;

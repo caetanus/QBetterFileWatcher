@@ -1,7 +1,10 @@
 QBetterFileWatcher
 ==================
 
-A FileWatcher improved for Qt4 that works on windows, linux and mac.
+An improved FileWatcher for Qt4 that works on Windows, Linux and Mac.
+
+The oficial QFileSystemWatcher lacks lots of signals, providing just when a directory was changed, but nothing else.
+this projects aims to provide a complete Crossplatform File System Watcher for Qt4
 
 
 How to use:

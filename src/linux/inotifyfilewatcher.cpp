@@ -2,24 +2,24 @@
 //this is just for debuging. we'll remove this as soon as possible.
 InotifyEvents_t strEvents[] =
  {
-   {IN_ACCESS         , "IN_ACCESS        "},
-   {IN_ATTRIB         , "IN_ATTRIB        "},
-   {IN_CLOSE_WRITE    , "IN_CLOSE_WRITE   "},
-   {IN_CLOSE_NOWRITE  , "IN_CLOSE_NOWRITE "},
-   {IN_CREATE         , "IN_CREATE        "},
-   {IN_DELETE         , "IN_DELETE        "},
-   {IN_DELETE_SELF    , "IN_DELETE_SELF   "},
-   {IN_MODIFY         , "IN_MODIFY        "},
-   {IN_MOVE_SELF      , "IN_MOVE_SELF     "},
-   {IN_MOVED_FROM     , "IN_MOVED_FROM    "},
-   {IN_MOVED_TO       , "IN_MOVED_TO      "},
-   {IN_OPEN           , "IN_OPEN          "},
+   {IN_ACCESS         , (char*)"IN_ACCESS        "},
+   {IN_ATTRIB         , (char*)"IN_ATTRIB        "},
+   {IN_CLOSE_WRITE    , (char*)"IN_CLOSE_WRITE   "},
+   {IN_CLOSE_NOWRITE  , (char*)"IN_CLOSE_NOWRITE "},
+   {IN_CREATE         , (char*)"IN_CREATE        "},
+   {IN_DELETE         , (char*)"IN_DELETE        "},
+   {IN_DELETE_SELF    , (char*)"IN_DELETE_SELF   "},
+   {IN_MODIFY         , (char*)"IN_MODIFY        "},
+   {IN_MOVE_SELF      , (char*)"IN_MOVE_SELF     "},
+   {IN_MOVED_FROM     , (char*)"IN_MOVED_FROM    "},
+   {IN_MOVED_TO       , (char*)"IN_MOVED_TO      "},
+   {IN_OPEN           , (char*)"IN_OPEN          "},
  };
 
 InotifyFileWatcher::InotifyFileWatcher() :
     m_notifier(NULL)
 {
-    inotify_init();
+    m_fd = inotify_init();
     if (m_fd < 0)
     {
         perror("inotify_init");
@@ -52,11 +52,12 @@ bool InotifyFileWatcher::watchDirectory(QString path, bool child)
         res = inotify_add_watch(m_fd, path.toStdString().c_str(), ROOT_DIRECTORY_WATCH);
 
     if (res == -1){
-        perror("watch directory error.");
+        perror("watch directory error");
         qDebug() << errno << strerror(errno);
         return false;
     }
 
+    m_handlesDirectory[res] = path;
     m_directoryHandles[path] = res;
     fetchSubDirectories(path);
     return true;
@@ -81,55 +82,10 @@ bool InotifyFileWatcher::unwatchDirectory(QString path)
         return false;
     }
     inotify_rm_watch(m_fd, m_directoryHandles[path]);
+    m_handlesDirectory.remove(m_directoryHandles[path]);
     m_directoryHandles.remove(path);
     return true;
 }
-
-
-bool InotifyFileWatcher::watchFile(QString path)
-{
-    path = QDir(path).absolutePath();
-    if(!QFileInfo(path).isFile()){
-        return false;
-    }
-
-    int res =  inotify_add_watch(m_fd,
-                                 path.toStdString().c_str(),
-                                 CHILD_WATCH | SELF_WATCH);
-    if (res == -1){
-        perror("watch file error.");
-        qDebug() << errno << strerror(errno);
-        return false;
-    }
-
-    m_fileHandles[path] = res;
-    return true;
-}
-
-
-bool InotifyFileWatcher::unwatchFile(QString path)
-{
-    path = QDir(path).absolutePath();
-    if (!m_fileHandles.contains(path))
-    {
-        return false;
-    }
-    inotify_rm_watch(m_fd, m_fileHandles[path]);
-    m_fileHandles.remove(path);
-    return true;
-}
-
-bool InotifyFileWatcher::isWatchingFile(QString path)
-{
-    path = QDir(path).absolutePath();
-    return m_fileHandles.contains(path);
-}
-
-QList<QString> InotifyFileWatcher::filesWatching()
-{
-    return m_fileHandles.keys();
-}
-
 
 bool InotifyFileWatcher::start()
 {
@@ -172,10 +128,10 @@ void InotifyFileWatcher::eventCallback()
             {
                 if (event->mask & IN_ISDIR)
                 {
-                    watchDirectory(event->name, true);
-                    emit directoryCreated(QString(event->name));
+                    watchDirectory(getEventFileName(event), true);
+                    emit directoryCreated(getEventFileName(event));
                 } else {
-                    emit fileCreated(QString(event->name));
+                    emit fileCreated(getEventFileName(event));
                 }
 
             }
@@ -183,9 +139,9 @@ void InotifyFileWatcher::eventCallback()
             {
                 if (event->mask & IN_ISDIR)
                 {
-                    emit directoryChanged(QString(event->name));
+                    emit directoryChanged(getEventFileName(event));
                 } else {
-                    emit fileUpdated(QString(event->name));
+                    emit fileUpdated(getEventFileName(event));
                 }
 
             }
@@ -193,11 +149,11 @@ void InotifyFileWatcher::eventCallback()
             {
                 if (event->mask & IN_ISDIR)
                 {
-                    if (m_directoryHandles.contains(QString(event->name)))
-                        unwatchDirectory(event->name);
-                    emit directoryDeleted(QString(event->name));
+                    if (m_directoryHandles.contains(getEventFileName(event)))
+                        unwatchDirectory(getEventFileName(event));
+                    emit directoryDeleted(getEventFileName(event));
                 } else {
-                    emit fileDeleted(QString(event->name));
+                    emit fileDeleted(getEventFileName(event));
                 }
 
 
@@ -206,7 +162,7 @@ void InotifyFileWatcher::eventCallback()
             {
                 if (strEvents[i].mask & event->mask)
                 {
-                    qDebug() << strEvents[i].name << event->name << event->wd;
+                    //qDebug() << strEvents[i].name << getEventFileName(event) << event->wd;
                 }
             }
         }

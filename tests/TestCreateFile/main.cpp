@@ -8,6 +8,37 @@
 
 #include <QBetterFileWatcher>
 
+
+bool rmTree(QString completePath)
+{
+    bool result = true;
+    QDir dir(completePath);
+
+    if (dir.exists(completePath)) {
+        QFileInfoList entries = dir.entryInfoList(QDir::NoDotAndDotDot |
+                                                  QDir::System |
+                                                  QDir::Hidden  |
+                                                  QDir::AllDirs |
+                                                  QDir::Files,
+                                                  QDir::DirsFirst);
+         foreach(QFileInfo info, entries) {
+            if (info.isDir()) {
+                result = rmTree(info.absoluteFilePath());
+            }
+            else {
+                result = QFile::remove(info.absoluteFilePath());
+            }
+
+            if (!result) {
+                return result;
+            }
+        }
+        result = dir.rmdir(completePath);
+    }
+    return result;
+}
+
+
 class CreateFileTestCase : public QObject
 {
     Q_OBJECT
@@ -17,7 +48,7 @@ class CreateFileTestCase : public QObject
 
     void createTempDirectory()
     {
-        QString path = QDir::tempPath() + QDir::separator() + QUuid::createUuid().toByteArray();
+        QString path = QDir::tempPath() + QDir::separator() + QString("QBetterFileWatcherTest-") + QUuid::createUuid().toByteArray();
         QDir().mkpath(path);
         m_tempPath = path;
     }
@@ -39,56 +70,63 @@ protected:
 public:
     QMap<QString, quint64> selfEvents;
     QMap<QString, quint64> deltaEvents;
+    int createEvents;
     CreateFileTestCase()
     {
         m_fwatcher = NULL;
     }
     void setUp()
     {
+        createEvents = 0;
         selfEvents.clear();
         createTempDirectory();
         m_fwatcher = new QBetterFileWatcher();
         connect(m_fwatcher, SIGNAL(fileCreated(QString)), this, SLOT(onFileCreated(QString)));
         m_fwatcher->watchDirectory(m_tempPath);
+        m_fwatcher->start();
     }
     void tearDown()
     {
         m_fwatcher->unwatchDirectory(m_tempPath);
-        QDir().rmpath(m_tempPath);
+        rmTree(m_tempPath);
         delete m_fwatcher;
         m_fwatcher = NULL;
     }
     void runTests()
     {
-        timeout.singleShot(300, this, SLOT(stopTest()));
-        const int numberOfFiles = 1024;
-        qDebug() << "creating " << numberOfFiles;
+        const int numberOfFiles = 4096;
+        qDebug() << "creating " << numberOfFiles << "files.";
         for (int i = 0; i < numberOfFiles; i++)
         {
             createRandomFile();
         }
+        timeout.singleShot(3000, this, SLOT(stopTest()));
     }
 public slots:
     void onFileCreated(QString filepath)
     {
         deltaEvents[filepath] = QDateTime::currentMSecsSinceEpoch() - selfEvents[filepath];
+        selfEvents.remove(filepath);
+        createEvents++;
+        if (!selfEvents.count())
+        {
+            //test has already passed.
+            timeout.stop();
+            stopTest();
+        }
     }
 
     void stopTest()
     {
         if (selfEvents.count() == 0)
         {
-            qDebug() << "Passed!";
+            qDebug() << "received " << createEvents << "create events.";
+            qDebug() << "PASSED!";
         }
         else
         {
-            qDebug() << "Failed";
-            //qDebug() << "Missing Events: " << selfEvents.keys();
-
-        }
-        foreach(QString file, deltaEvents.keys())
-        {
-            qDebug() << file << deltaEvents[file];
+            qDebug() << "FAILED!";
+            qDebug() << "Missing Events: " << selfEvents.keys().length();
 
         }
         tearDown();

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
+extern "C" {
 extern int inotify_init (void);
 /* Create and initialize inotify instance.  */
 extern int inotify_init1 (int __flags);
@@ -13,6 +14,7 @@ extern int inotify_init1 (int __flags);
 extern int inotify_add_watch (int __fd, const char *__name, uint32_t __mask);
 /* Remove the watch specified by WD from the inotify instance FD.  */
 extern int inotify_rm_watch (int __fd, int __wd);
+}
 
 #include <sys/types.h>
 #include <errno.h>

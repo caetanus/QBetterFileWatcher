@@ -10,6 +10,7 @@ Makefile
 
 # generated files
 
+*.moc
 moc_*.cpp
 ui_*.cpp
 qrc_*.cpp
@@ -32,3 +33,7 @@ qrc_*.cpp
 #project user configurations
 
 *.pro.user
+
+
+#builds
+builds/

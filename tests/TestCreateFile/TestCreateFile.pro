@@ -9,7 +9,7 @@ include(../../QBetterFileWatcher.prf)
 QT       += core
 QT       -= gui
 
-TARGET = TestCreateFile
+TARGET = $$PWD/../../builds/TestCreateFile
 CONFIG   += console
 CONFIG   -= app_bundle
 

@@ -20,6 +20,7 @@ protected:
     QMap<QString, quint64> selfCreateEvents;
     void createTemporaryDirectory();
     void createRandomFile(int size=4096);
+    void createRandomFile(bool randomParent, int size=4096);
     virtual void stopTest(bool passed);
 
 public:

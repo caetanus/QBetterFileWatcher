@@ -13,7 +13,8 @@ int main(int argc, char *argv[])
     testRunner
               << new CreateFilesTestCase()
               << new CreateDirectoriesTestCase()
-               << new DeleteDirectoriesTestCase()
+              << new DeleteDirectoriesTestCase()
+              << new CreateDirectoriesTestCase()
                  ;
     testRunner.run();
     return a.exec();

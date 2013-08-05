@@ -12,9 +12,9 @@ int main(int argc, char *argv[])
     TestRunner testRunner;
     testRunner
               << new CreateFilesTestCase()
+              << new DeleteFilesTestCase()
               << new CreateDirectoriesTestCase()
               << new DeleteDirectoriesTestCase()
-              << new CreateDirectoriesTestCase()
                  ;
     testRunner.run();
     return a.exec();

@@ -6,35 +6,28 @@
 #include <QUuid>
 #include <QDateTime>
 #include <QTimer>
-#include "TestBase.h"
+#include "testbase.h"
 
 #include <QBetterFileWatcher>
 
-bool rmTree(QString completePath);
 
-class CreateFileTestCase : public TestBase
+class CreateDirectoriesTestCase : public TestBase
 {
     Q_OBJECT
-    QString m_tempPath;
     QBetterFileWatcher* m_fwatcher;
     bool m_running;
     QTimer timeout;
 
-    void createTempDirectory();
-protected:
-    void createRandomFile(int size=1024);
-
 
 public:
-    QMap<QString, quint64> selfEvents;
     QMap<QString, quint64> deltaEvents;
     int createEvents;
-    CreateFileTestCase();
+    CreateDirectoriesTestCase();
     void setUp();
     void tearDown();
-    void runTests();
+    void runTest();
 public slots:
-    void onFileCreated(QString filepath);
+    void onDirCreated(QString filepath);
     void stopTest();
 
 };

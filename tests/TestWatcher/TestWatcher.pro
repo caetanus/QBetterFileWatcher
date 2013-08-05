@@ -17,9 +17,15 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp \
-    TestCreateFile.cpp \
-    TestBase.cpp
+    testdeletefiles.cpp \
+    testbase.cpp \
+    testcreatefile.cpp \
+    testcreatedirectory.cpp\
+    testdeletedirectory.cpp
 
 HEADERS += \
-    TestCreateFile.h \
-    TestBase.h
+    testdeletefiles.h \
+    testcreatefile.h \
+    testcreatedirectory.h\
+    testdeletedirectory.h\
+    testbase.h

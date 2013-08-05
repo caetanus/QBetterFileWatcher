@@ -53,6 +53,7 @@ class InotifyFileWatcher : public QObject
     Q_OBJECT
     char m_buffer[EVENT_BUF_LEN];
     int m_fd;
+    bool m_started;
     QSocketNotifier *m_notifier;
     QMap<int, QString> m_handlesDirectory;
     QMap<QString, int> m_directoryHandles;

@@ -17,7 +17,7 @@ InotifyEvents_t strEvents[] =
  };
 
 InotifyFileWatcher::InotifyFileWatcher() :
-    m_notifier(NULL)
+    m_started(false), m_notifier(NULL)
 {
     m_fd = inotify_init();
     if (m_fd < 0)
@@ -27,7 +27,6 @@ InotifyFileWatcher::InotifyFileWatcher() :
     }
     m_notifier = new QSocketNotifier(m_fd, QSocketNotifier::Read);
     m_notifier->setEnabled(false);
-    connect(m_notifier, SIGNAL(activated(int)), this, SLOT(eventCallback()));
 
 }
 
@@ -53,7 +52,7 @@ bool InotifyFileWatcher::watchDirectory(QString path, bool child)
     if (child)
         res = inotify_add_watch(m_fd, path.toStdString().c_str(), CHILD_DIRECTORY_WATCH);
     else
-        res = inotify_add_watch(m_fd, path.toStdString().c_str(), ROOT_DIRECTORY_WATCH);
+        res = inotify_add_watch(m_fd, path.toStdString().c_str(), IN_ALL_EVENTS);
 
     if (res == -1){
         perror("watch directory error");
@@ -93,12 +92,16 @@ bool InotifyFileWatcher::unwatchDirectory(QString path)
 
 void InotifyFileWatcher::start()
 {
+    m_started = true;
+    connect(m_notifier, SIGNAL(activated(int)), this, SLOT(eventCallback()),  Qt::QueuedConnection);
     m_notifier->setEnabled(true);
 }
 
 void InotifyFileWatcher::stop()
 {
+    m_started = false;
     m_notifier->setEnabled(false);
+    disconnect(this, SLOT(eventCallback()));
 }
 
 
@@ -114,6 +117,8 @@ void InotifyFileWatcher::eventCallback()
         perror("read");
     }
     int i  = 0;
+    if (!m_started)
+        return;
     while (i < lenght)
     {
         struct inotify_event *event = ( struct inotify_event *)&m_buffer[i];
@@ -157,7 +162,7 @@ void InotifyFileWatcher::eventCallback()
             {
                 if (strEvents[i].mask & event->mask)
                 {
-                    //qDebug() << strEvents[i].name << getEventFileName(event) << event->wd;
+                    //qDebug() << QString(strEvents[i].name) << getEventFileName(event) << event->wd;
                 }
             }
         }
@@ -170,6 +175,6 @@ InotifyFileWatcher::~InotifyFileWatcher()
     m_directoryHandles.clear();
     m_handlesDirectory.clear();
     stop();
-    delete m_notifier;
     close(m_fd);
+    //delete m_notifier;
 }

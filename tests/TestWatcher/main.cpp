@@ -4,6 +4,10 @@
 #include "testcreatedirectory.h"
 #include "testdeletedirectory.h"
 #include "testdeletefiles.h"
+#include "testmovefile.h"
+#include "testmoveintodirectory.h"
+
+
 
 int main(int argc, char *argv[])
 {
@@ -15,6 +19,8 @@ int main(int argc, char *argv[])
               << new DeleteFilesTestCase()
               << new CreateDirectoriesTestCase()
               << new DeleteDirectoriesTestCase()
+              << new MoveFileTestCase()
+              << new MoveFileIntoDirectoryTestCase()
                  ;
     testRunner.run();
     return a.exec();

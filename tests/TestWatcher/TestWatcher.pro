@@ -7,10 +7,10 @@
 include(../../QBetterFileWatcher.prf)
 
 QT       += core
-QT       -= gui
+#QT       -= gui
 
 TARGET = $$PWD/../../builds/TestWatcher
-CONFIG   += console
+#CONFIG   += console
 CONFIG   -= app_bundle
 
 TEMPLATE = app
@@ -21,11 +21,25 @@ SOURCES += main.cpp \
     testbase.cpp \
     testcreatefile.cpp \
     testcreatedirectory.cpp\
-    testdeletedirectory.cpp
+    testdeletedirectory.cpp\
+    testmovefile.cpp\
+    testmoveintodirectory.cpp
+    #testmovefileoutside.cpp\
+    #testmovefileinse.cpp\
+    #testmovedirectory.cpp\
+    #testmovedirectoryoutside.cpp\
+    #testmovedirectoryinside.cpp
 
 HEADERS += \
     testdeletefiles.h \
     testcreatefile.h \
     testcreatedirectory.h\
     testdeletedirectory.h\
+    testmovefile.h\
+    testmoveintodirectory.h\
+    #testmovefileoutside.h\
+    #testmovefileinse.h\
+    #testmovedirectory.h\
+    #testmovedirectoryoutside.h\
+    #testmovedirectoryinside.h\
     testbase.h

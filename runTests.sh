@@ -3,7 +3,7 @@
 
 buildLib()  {
     echo "Building lib..."
-    qmake
+    qmake -config "debug develop"
     make -j4 > /dev/null
     if [ "$?" != "0" ]
     then
@@ -14,13 +14,17 @@ buildLib()  {
 buildTests() {
     echo "Compiling tests"
     cd tests/TestWatcher
-    qmake -config debug && make clean 2>&1 > /dev/null
+    qmake -config "debug develop" && make clean 2>&1 > /dev/null
     make -j4 > /dev/null
 
     if [ "$?" != "0" ]
     then
         exit $?
     fi
+    cd $OLDPWD
+    cd tests/SmokeTest
+    qmake -config "debug develop" && make clean 2>&1 > /dev/null
+    make -j4 > /dev/null
     cd $OLDPWD
 }
 

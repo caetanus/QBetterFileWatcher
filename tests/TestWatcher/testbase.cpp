@@ -43,7 +43,7 @@ void TestBase::createTemporaryDirectory()
     m_tempPath = path;
 }
 
-void TestBase::createRandomFile(int size)
+QString TestBase::createRandomFile(int size)
 {
     char* data = (char*)malloc(size); //unitialized pointer, but.. who cares?
 
@@ -54,6 +54,7 @@ void TestBase::createRandomFile(int size)
     tempFile.write(data, size);
     tempFile.close();
     free(data);
+    return tempFile.fileName();
 }
 
 

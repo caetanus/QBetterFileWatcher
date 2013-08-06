@@ -19,7 +19,7 @@ protected:
     QString m_tempPath;
     QMap<QString, quint64> selfCreateEvents;
     void createTemporaryDirectory();
-    void createRandomFile(int size=4096);
+    QString createRandomFile(int size=4096);
     virtual void stopTest(bool passed);
 
 public:

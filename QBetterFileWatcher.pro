@@ -6,12 +6,14 @@
 
 CONFIG += shadow_build
 
+develop {
+    DEFINES += DEBUG_INFORMATION
+}
 QT       -= gui
 
 shadow_build {
     OBJECTS_DIR = $$PWD/shadow_build
     MOC_DIR = $$PWD/shadow_build
-    UIC_DIR = $$PWD/shadow_build
     RCC_DIR = $$PWD/shadow_build
     UI_DIR = $$PWD/shadow_build
 
@@ -48,7 +50,7 @@ unix:!symbian {
     maemo5 {
         target.path = /opt/usr/lib
     } else {
-        target.path = /usr/lib
+        target.path = /usr/local/lib
     }
     INSTALLS += target
 }

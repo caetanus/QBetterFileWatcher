@@ -43,12 +43,12 @@ void TestBase::createTemporaryDirectory()
     m_tempPath = path;
 }
 
-void TestBase::createRandomFile(int size)
+QString TestBase::createRandomFile(int size)
 {
-    createRandomFile(false, size);
+    return createRandomFile(false, size);
 }
 
-void TestBase::createRandomFile(bool randomParent, int size)
+QString TestBase::createRandomFile(bool randomParent, int size)
 {
     QString parent = m_tempPath + QDir::separator();
     if (randomParent)
@@ -65,12 +65,14 @@ void TestBase::createRandomFile(bool randomParent, int size)
     tempFile.write(data, size);
     tempFile.close();
     free(data);
+    return tempFile.fileName();
 }
 
 
 void TestBase::stopTest(bool passed)
 {
     emit testStop(this, passed);
+
 }
 
 

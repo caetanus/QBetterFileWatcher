@@ -22,6 +22,7 @@ int main(int argc, char *argv[])
               << new MoveFileTestCase()
               << new MoveFileIntoDirectoryTestCase()
                  ;
+    qDebug() <<  a.thread();
     testRunner.run();
     return a.exec();
 }

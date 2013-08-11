@@ -5,7 +5,6 @@ MoveFileIntoDirectoryTestCase::MoveFileIntoDirectoryTestCase()
     m_fwatcher = NULL;
     m_passed = false;
     m_gotEvent = false;
-    m_timeout = new QTimer(this);
 }
 
 void MoveFileIntoDirectoryTestCase::setUp()
@@ -13,7 +12,7 @@ void MoveFileIntoDirectoryTestCase::setUp()
     createEvents = 0;
     selfCreateEvents.clear();
     createTemporaryDirectory();
-    m_subDir = m_tempPath + QDir::separator() + "a";
+    m_subDir = m_tempPath + QDir::separator();
     qDebug() << m_subDir;
     QDir().mkdir(m_subDir);
     m_randomFile = createRandomFile();
@@ -23,7 +22,7 @@ void MoveFileIntoDirectoryTestCase::setUp()
     connect(m_fwatcher, SIGNAL(fileMoved(QString,QString)),
             this, SLOT(onFileMoved(QString, QString)));
     m_fwatcher->watchDirectory(m_tempPath);
-
+    m_fwatcher->start();
 
 }
 
@@ -42,22 +41,21 @@ void MoveFileIntoDirectoryTestCase::tearDown()
 void MoveFileIntoDirectoryTestCase::runTest()
 {
     m_running = true;
-    m_fwatcher->start();
-    QFile::rename(m_randomFile, m_randomFileNew);
-    connect(this->m_timeout, SIGNAL(timeout()),
-            this, SLOT(onTimeout()));
-
-    //TODO: investigate why this timers wont working.
+    qDebug() << QFile::rename(m_randomFile, m_randomFileNew);
+    qDebug() << QDir(m_subDir).entryList();
+    m_timeout = new QTimer(this);
     m_timeout->setSingleShot(true);
-    m_timeout->setInterval(10);
-    m_timeout->start();
+    connect(m_timeout,SIGNAL(timeout()) , this, SLOT(onTimeout()));
 
+    m_timeout->setInterval(100);
+    m_timeout->start();
 
 }
 
 
 void MoveFileIntoDirectoryTestCase::onFileMoved(QString oldFilePath, QString newFilePath)
 {
+    qDebug() << "foo";
     moveEvent.first = oldFilePath;
     moveEvent.second = newFilePath;
     m_timeout->stop();

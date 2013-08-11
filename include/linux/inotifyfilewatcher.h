@@ -126,6 +126,7 @@ public:
     QList<QString> directoriesWatching();
     bool isWatchingDirectory(QString path);
     int getHandle();
+    void debug(QStringList debug);
 
     ~INotifyFileWatcher();
     

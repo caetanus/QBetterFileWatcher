@@ -25,7 +25,9 @@ void INotifyFileWatcher::fetchSubDirectories(QString path)
     foreach(QString dir, dpath.entryList(QDir::Dirs | QDir::Hidden |
                                          QDir::System | QDir::NoDotAndDotDot))
     {
-        qDebug() << "watching subdirectories" << path + QDir::separator() + dir;
+#ifdef DEBUG_INFORMATION
+        emit debugInformation(QStringList() << "watching subdirectories" << path + QDir::separator() + dir);
+#endif
         watchDirectory(path + QDir::separator() + dir, true);
     }
 }
@@ -98,6 +100,13 @@ int INotifyFileWatcher::getHandle()
 {
     return m_fd;
 }
+
+void INotifyFileWatcher::debug(QStringList debugInfo){
+#ifdef DEBUG_INFORMATION
+    emit debugInformation(debugInfo);
+#endif
+}
+
 void INotifyFileWatcher::eventCallback()
 {
     int lenght = read(m_fd, m_buffer, EVENT_BUF_LEN);
@@ -117,9 +126,12 @@ void INotifyFileWatcher::eventCallback()
             {
                 if (event->mask & IN_ISDIR)
                 {
+                    debug(QStringList(QStringList() << "watchDirectory" << getEventFileName(event)));
                     watchDirectory(getEventFileName(event), true);
+                    debug(QStringList(QStringList() << "directoryCreated" << getEventFileName(event)));
                     emit directoryCreated(getEventFileName(event));
                 } else {
+                    debug(QStringList(QStringList() << "fileCreated" << getEventFileName(event)));
                     emit fileCreated(getEventFileName(event));
                 }
 
@@ -131,8 +143,10 @@ void INotifyFileWatcher::eventCallback()
             {
                 if (event->mask & IN_ISDIR)
                 {
+                    debug(QStringList(QStringList() << "directoryChanged" << getEventFileName(event)));
                     emit directoryChanged(getEventFileName(event));
                 } else {
+                    debug(QStringList(QStringList() << "fileChanged" << getEventFileName(event)));
                     emit fileUpdated(getEventFileName(event));
                 }
 
@@ -160,10 +174,12 @@ void INotifyFileWatcher::eventCallback()
                     {
                         QString eventName = getEventFileName(event);
                         watchDirectory(eventName);
+                        debug(QStringList(QStringList() << "directoryCreated(byMove)" << getEventFileName(event)));
                         emit directoryCreated(eventName);
                     }
                     else
                     {
+                        debug(QStringList(QStringList() << "fileCreated(byMove)" << getEventFileName(event)));
                         emit fileCreated(getEventFileName(event));
                     }
 
@@ -175,10 +191,16 @@ void INotifyFileWatcher::eventCallback()
                     QPair<FSObjectType, QString> moveQueueItem = m_moveEventQueue.takeFirst();
                     if (event->mask & IN_ISDIR)
                     {
+                        debug(QStringList(QStringList() << "directoryMoved" << moveQueueItem.second << getEventFileName(event)));
+                        int handle = m_directoryHandles[moveQueueItem.second];
+                        m_directoryHandles.remove(moveQueueItem.second);
+                        m_directoryHandles[getEventFileName(event)] = handle;
+                        m_handlesDirectory[handle] = getEventFileName(event);
                         emit directoryMoved(moveQueueItem.second, getEventFileName(event));
                     }
                     else
                     {
+                        debug(QStringList(QStringList() << "fileMoved" << moveQueueItem.second << getEventFileName(event)));
                         emit fileMoved(moveQueueItem.second, getEventFileName(event));
                     }
                 }
@@ -189,8 +211,10 @@ void INotifyFileWatcher::eventCallback()
                 {
                     if (m_directoryHandles.contains(getEventFileName(event)))
                         unwatchDirectory(getEventFileName(event));
+                    debug(QStringList(QStringList() << "directoryDeleted" << getEventFileName(event)));
                     emit directoryDeleted(getEventFileName(event));
                 } else {
+                    debug(QStringList(QStringList() << "fileDeleted" << getEventFileName(event)));
                     emit fileDeleted(getEventFileName(event));
                 }
 
@@ -233,10 +257,12 @@ void INotifyFileWatcher::unStackerMoves()
         QPair<FSObjectType, QString> event = m_moveEventQueue.takeFirst();
         if(event.first == File)
         {
+            debug(QStringList(QStringList() << "fileDeleted(by move)" << event.second));
             emit fileDeleted(event.second);
         }
         else
         {
+            debug(QStringList(QStringList() << "directoryDeleted(by move)" << event.second));
             unwatchDirectory(event.second);
             emit directoryDeleted(event.second);
         }

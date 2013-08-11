@@ -23,7 +23,6 @@ void MoveFileTestCase::setUp()
 
 }
 
-
 void MoveFileTestCase::tearDown()
 {
     disconnect(this, SLOT(onFileMoved(QString, QString)));
@@ -34,6 +33,9 @@ void MoveFileTestCase::tearDown()
     delete m_fwatcher;
     m_fwatcher = NULL;
 }
+
+
+
 
 void MoveFileTestCase::runTest()
 {

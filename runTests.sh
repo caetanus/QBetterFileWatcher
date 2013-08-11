@@ -3,7 +3,7 @@
 
 buildLib()  {
     echo "Building lib..."
-    qmake -config "debug develop"
+    qmake # -config "debug develop"
     make -j4 > /dev/null
     if [ "$?" != "0" ]
     then

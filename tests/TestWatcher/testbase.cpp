@@ -61,6 +61,7 @@ QString TestBase::createRandomFile(int size)
 void TestBase::stopTest(bool passed)
 {
     emit testStop(this, passed);
+
 }
 
 

@@ -43,23 +43,36 @@ void TestBase::createTemporaryDirectory()
     m_tempPath = path;
 }
 
-void TestBase::createRandomFile(int size)
+QString TestBase::createRandomFile(int size)
 {
+    return createRandomFile(false, size);
+}
+
+QString TestBase::createRandomFile(bool randomParent, int size)
+{
+    QString parent = m_tempPath + QDir::separator();
+    if (randomParent)
+    {
+        parent + QDir::separator() + QUuid::createUuid().toByteArray() + QDir::separator();
+        QDir().mkpath(parent);
+    }
     char* data = (char*)malloc(size); //unitialized pointer, but.. who cares?
 
-    QFile tempFile(m_tempPath + QDir::separator() + QUuid::createUuid().toByteArray());
+    QFile tempFile(parent + QUuid::createUuid().toByteArray());
     selfCreateEvents[tempFile.fileName()] = QDateTime::currentMSecsSinceEpoch();
     tempFile.open(QIODevice::WriteOnly);
 
     tempFile.write(data, size);
     tempFile.close();
     free(data);
+    return tempFile.fileName();
 }
 
 
 void TestBase::stopTest(bool passed)
 {
     emit testStop(this, passed);
+
 }
 
 

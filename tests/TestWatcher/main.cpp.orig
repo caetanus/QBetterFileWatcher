@@ -4,11 +4,16 @@
 #include "testcreatedirectory.h"
 #include "testdeletedirectory.h"
 #include "testdeletefiles.h"
-#include "testmovefile.h"
-#include "testmoveintodirectory.h"
+<<<<<<< HEAD
 #include "testcreatesubdirfile.h"
 #include "testdeletesubdirfiles.h"
 #include "testcreatesubdirs.h"
+=======
+#include "testmovefile.h"
+#include "testmoveintodirectory.h"
+
+
+>>>>>>> feature/testMoveFiles
 
 int main(int argc, char *argv[])
 {
@@ -26,7 +31,7 @@ int main(int argc, char *argv[])
               << new MoveFileTestCase()
               << new MoveFileIntoDirectoryTestCase()
                  ;
-
+    qDebug() <<  a.thread();
     testRunner.run();
     return a.exec();
 }

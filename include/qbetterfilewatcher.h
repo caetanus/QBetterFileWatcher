@@ -2,7 +2,7 @@
 
 #ifdef __gnu_linux__
 #   include "linux/inotifyfilewatcher.h"
-#   define IMPLEMENTATION InotifyFileWatcher
+#   define IMPLEMENTATION INotifyFileWatcher
 #endif
 
 class QBetterFileWatcher : public IMPLEMENTATION

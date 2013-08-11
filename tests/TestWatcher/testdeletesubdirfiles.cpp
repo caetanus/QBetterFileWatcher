@@ -1,12 +1,12 @@
-#include "testdeletefiles.h"
+#include "testdeletesubdirfiles.h"
 static const int numberOfFiles = 128;
 
-DeleteFilesTestCase::DeleteFilesTestCase()
+DeleteSubdirFilesTestCase::DeleteSubdirFilesTestCase()
 {
     m_fwatcher = NULL;
 }
 
-void DeleteFilesTestCase::setUp()
+void DeleteSubdirFilesTestCase::setUp()
 {
     delEvents = 0;
     selfCreateEvents.clear();
@@ -17,7 +17,7 @@ void DeleteFilesTestCase::setUp()
     qDebug() << "creating " << numberOfFiles << "files.";
     for (int i = 0; i < numberOfFiles; i++)
     {
-        createRandomFile();
+        createRandomFile(true);
     }
 
     m_fwatcher->watchDirectory(m_tempPath);
@@ -26,7 +26,7 @@ void DeleteFilesTestCase::setUp()
 }
 
 
-void DeleteFilesTestCase::tearDown()
+void DeleteSubdirFilesTestCase::tearDown()
 {
     disconnect(this, SLOT(onFileDeleted(QString)));
     m_fwatcher->unwatchDirectory(m_tempPath);
@@ -36,7 +36,7 @@ void DeleteFilesTestCase::tearDown()
     m_fwatcher = NULL;
 }
 
-void DeleteFilesTestCase::runTest()
+void DeleteSubdirFilesTestCase::runTest()
 {
     m_running = true;
     foreach(QString file, QDir(m_tempPath).entryList(QDir::NoDotAndDotDot |
@@ -54,7 +54,7 @@ void DeleteFilesTestCase::runTest()
 }
 
 
-void DeleteFilesTestCase::onFileDeleted(QString filepath)
+void DeleteSubdirFilesTestCase::onFileDeleted(QString filepath)
 {
     deltaEvents[filepath] = QDateTime::currentMSecsSinceEpoch() - selfCreateEvents[filepath];
     selfCreateEvents.remove(filepath);
@@ -68,7 +68,7 @@ void DeleteFilesTestCase::onFileDeleted(QString filepath)
     }
 }
 
-void DeleteFilesTestCase::stopTest()
+void DeleteSubdirFilesTestCase::stopTest()
 {
     if(m_running)
     {

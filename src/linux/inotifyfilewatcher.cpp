@@ -1,22 +1,10 @@
 #include "inotifyfilewatcher.h"
 //this is just for debuging. we'll remove this as soon as possible.
-InotifyEvents_t strEvents[] =
- {
-   {IN_ACCESS         , (char*)"IN_ACCESS        "},
-   {IN_ATTRIB         , (char*)"IN_ATTRIB        "},
-   {IN_CLOSE_WRITE    , (char*)"IN_CLOSE_WRITE   "},
-   {IN_CLOSE_NOWRITE  , (char*)"IN_CLOSE_NOWRITE "},
-   {IN_CREATE         , (char*)"IN_CREATE        "},
-   {IN_DELETE         , (char*)"IN_DELETE        "},
-   {IN_DELETE_SELF    , (char*)"IN_DELETE_SELF   "},
-   {IN_MODIFY         , (char*)"IN_MODIFY        "},
-   {IN_MOVE_SELF      , (char*)"IN_MOVE_SELF     "},
-   {IN_MOVED_FROM     , (char*)"IN_MOVED_FROM    "},
-   {IN_MOVED_TO       , (char*)"IN_MOVED_TO      "},
-   {IN_OPEN           , (char*)"IN_OPEN          "},
- };
 
-InotifyFileWatcher::InotifyFileWatcher() :
+QMap<int, QString> EventUtilsInotify::m_evs = QMap<int, QString>();
+bool EventUtilsInotify::m_setup = false;
+
+INotifyFileWatcher::INotifyFileWatcher() :
     m_started(false), m_notifier(NULL)
 {
     m_fd = inotify_init();
@@ -30,18 +18,21 @@ InotifyFileWatcher::InotifyFileWatcher() :
 
 }
 
-void InotifyFileWatcher::fetchSubDirectories(QString path)
+void INotifyFileWatcher::fetchSubDirectories(QString path)
 {
     QDir dpath(QDir(path).absolutePath());
 
     foreach(QString dir, dpath.entryList(QDir::Dirs | QDir::Hidden |
                                          QDir::System | QDir::NoDotAndDotDot))
     {
+#ifdef DEBUG_INFORMATION
+        emit debugInformation(QStringList() << "watching subdirectories" << path + QDir::separator() + dir);
+#endif
         watchDirectory(path + QDir::separator() + dir, true);
     }
 }
 
-bool InotifyFileWatcher::watchDirectory(QString path, bool child)
+bool INotifyFileWatcher::watchDirectory(QString path, bool child)
 {
     path = QDir(path).absolutePath();
     int res;
@@ -66,18 +57,18 @@ bool InotifyFileWatcher::watchDirectory(QString path, bool child)
     return true;
 }
 
-bool InotifyFileWatcher::isWatchingDirectory(QString path)
+bool INotifyFileWatcher::isWatchingDirectory(QString path)
 {
     path = QDir(path).absolutePath();
     return m_directoryHandles.contains(path);
 }
 
-QList<QString> InotifyFileWatcher::directoriesWatching()
+QList<QString> INotifyFileWatcher::directoriesWatching()
 {
     return m_directoryHandles.keys();
 }
 
-bool InotifyFileWatcher::unwatchDirectory(QString path)
+bool INotifyFileWatcher::unwatchDirectory(QString path)
 {
     path = QDir(path).absolutePath();
     if (!m_directoryHandles.contains(path))
@@ -90,14 +81,14 @@ bool InotifyFileWatcher::unwatchDirectory(QString path)
     return true;
 }
 
-void InotifyFileWatcher::start()
+void INotifyFileWatcher::start()
 {
     m_started = true;
     connect(m_notifier, SIGNAL(activated(int)), this, SLOT(eventCallback()),  Qt::QueuedConnection);
     m_notifier->setEnabled(true);
 }
 
-void InotifyFileWatcher::stop()
+void INotifyFileWatcher::stop()
 {
     m_started = false;
     m_notifier->setEnabled(false);
@@ -105,11 +96,18 @@ void InotifyFileWatcher::stop()
 }
 
 
-int InotifyFileWatcher::getHandle()
+int INotifyFileWatcher::getHandle()
 {
     return m_fd;
 }
-void InotifyFileWatcher::eventCallback()
+
+void INotifyFileWatcher::debug(QStringList debugInfo){
+#ifdef DEBUG_INFORMATION
+    emit debugInformation(debugInfo);
+#endif
+}
+
+void INotifyFileWatcher::eventCallback()
 {
     int lenght = read(m_fd, m_buffer, EVENT_BUF_LEN);
     if ( lenght < 0)
@@ -128,22 +126,84 @@ void InotifyFileWatcher::eventCallback()
             {
                 if (event->mask & IN_ISDIR)
                 {
+                    debug(QStringList(QStringList() << "watchDirectory" << getEventFileName(event)));
                     watchDirectory(getEventFileName(event), true);
+                    debug(QStringList(QStringList() << "directoryCreated" << getEventFileName(event)));
                     emit directoryCreated(getEventFileName(event));
                 } else {
+                    debug(QStringList(QStringList() << "fileCreated" << getEventFileName(event)));
                     emit fileCreated(getEventFileName(event));
                 }
 
             }
-            else if ((event->mask & IN_MODIFY) || (event->mask & IN_MOVE_SELF) || (event->mask & IN_ATTRIB))
+            else if ((event->mask & IN_MODIFY) ||
+                     (event->mask & IN_CLOSE_WRITE) ||
+                     (event->mask & IN_ATTRIB))
+
             {
                 if (event->mask & IN_ISDIR)
                 {
+                    debug(QStringList(QStringList() << "directoryChanged" << getEventFileName(event)));
                     emit directoryChanged(getEventFileName(event));
                 } else {
+                    debug(QStringList(QStringList() << "fileChanged" << getEventFileName(event)));
                     emit fileUpdated(getEventFileName(event));
                 }
 
+            }
+            else if (event->mask & IN_MOVED_FROM)
+            {
+                QPair<FSObjectType, QString> moveQueueItem;
+                if (event->mask & IN_ISDIR)
+                {
+                    moveQueueItem.first = Directory;
+                }
+                else moveQueueItem.first = File;
+                moveQueueItem.second = getEventFileName(event);
+                m_moveEventQueue.append(moveQueueItem);
+                onMovedFromEvent(); // starts a timer to checks if this was moved out of directory
+            }
+            else if (event->mask & IN_MOVED_TO)
+            {
+                //TODO: fix the queue to get a way to check if it is a dir or not.
+                //nowadays we just unstack
+                if (!m_moveEventQueue.length())
+                {
+                    //There is not in the queue, so we'll emit a create event.
+                    if (event->mask & IN_ISDIR)
+                    {
+                        QString eventName = getEventFileName(event);
+                        watchDirectory(eventName);
+                        debug(QStringList(QStringList() << "directoryCreated(byMove)" << getEventFileName(event)));
+                        emit directoryCreated(eventName);
+                    }
+                    else
+                    {
+                        debug(QStringList(QStringList() << "fileCreated(byMove)" << getEventFileName(event)));
+                        emit fileCreated(getEventFileName(event));
+                    }
+
+                }
+                else
+                {
+                    //lets cancel the last move timer.
+                    deQueueMovedTimer();
+                    QPair<FSObjectType, QString> moveQueueItem = m_moveEventQueue.takeFirst();
+                    if (event->mask & IN_ISDIR)
+                    {
+                        debug(QStringList(QStringList() << "directoryMoved" << moveQueueItem.second << getEventFileName(event)));
+                        int handle = m_directoryHandles[moveQueueItem.second];
+                        m_directoryHandles.remove(moveQueueItem.second);
+                        m_directoryHandles[getEventFileName(event)] = handle;
+                        m_handlesDirectory[handle] = getEventFileName(event);
+                        emit directoryMoved(moveQueueItem.second, getEventFileName(event));
+                    }
+                    else
+                    {
+                        debug(QStringList(QStringList() << "fileMoved" << moveQueueItem.second << getEventFileName(event)));
+                        emit fileMoved(moveQueueItem.second, getEventFileName(event));
+                    }
+                }
             }
             else if ((event->mask & IN_DELETE) || (event->mask & IN_DELETE_SELF))
             {
@@ -151,27 +211,69 @@ void InotifyFileWatcher::eventCallback()
                 {
                     if (m_directoryHandles.contains(getEventFileName(event)))
                         unwatchDirectory(getEventFileName(event));
+                    debug(QStringList(QStringList() << "directoryDeleted" << getEventFileName(event)));
                     emit directoryDeleted(getEventFileName(event));
                 } else {
+                    debug(QStringList(QStringList() << "fileDeleted" << getEventFileName(event)));
                     emit fileDeleted(getEventFileName(event));
                 }
 
 
             }
-            for (unsigned int i = 0; i < sizeof(strEvents); i++)
-            {
-                if (strEvents[i].mask & event->mask)
-                {
-                    //qDebug() << QString(strEvents[i].name) << getEventFileName(event) << event->wd;
-                }
-            }
+#ifdef DEBUG_INFORMATION
+                emit debugInformation(EventUtilsInotify::translateEvent(event) << getEventFileName(event));
+#endif
         }
         i += EVENT_SIZE + event->len;
     }
 
 }
-InotifyFileWatcher::~InotifyFileWatcher()
+
+void INotifyFileWatcher::onMovedFromEvent()
 {
+    QTimer* timeout = new QTimer();
+    connect(timeout, SIGNAL(timeout()), this, SLOT(unStackerMoves()));
+    timeout->setInterval(5); //checks event on 5ms if has no moved to event in this time, acts as a delete.
+    timeout->setSingleShot(true);
+    m_moveEventDequeuer.append(timeout);
+    timeout->start();
+}
+
+bool INotifyFileWatcher::deQueueMovedTimer()
+{
+    if (!m_moveEventDequeuer.length())
+        return false;
+    QTimer* timeout = m_moveEventDequeuer.takeFirst();
+    timeout->stop();
+    disconnect(this, SLOT(unStackerMoves()));
+    delete timeout;
+    return true;
+}
+
+void INotifyFileWatcher::unStackerMoves()
+{
+    if (m_moveEventQueue.length())
+    {
+        QPair<FSObjectType, QString> event = m_moveEventQueue.takeFirst();
+        if(event.first == File)
+        {
+            debug(QStringList(QStringList() << "fileDeleted(by move)" << event.second));
+            emit fileDeleted(event.second);
+        }
+        else
+        {
+            debug(QStringList(QStringList() << "directoryDeleted(by move)" << event.second));
+            unwatchDirectory(event.second);
+            emit directoryDeleted(event.second);
+        }
+    }
+    deQueueMovedTimer();
+}
+
+INotifyFileWatcher::~INotifyFileWatcher()
+{
+    while(deQueueMovedTimer());
+
     m_directoryHandles.clear();
     m_handlesDirectory.clear();
     stop();

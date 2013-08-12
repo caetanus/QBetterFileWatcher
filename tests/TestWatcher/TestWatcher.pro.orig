@@ -18,10 +18,10 @@ shadow_build {
 }
 
 QT       += core
-QT       -= gui
+#QT       -= gui
 
 TARGET = $$PWD/../../builds/TestWatcher
-CONFIG   += console
+#CONFIG   += console
 CONFIG   -= app_bundle
 
 TEMPLATE = app
@@ -33,9 +33,11 @@ SOURCES += main.cpp \
     testcreatefile.cpp \
     testcreatedirectory.cpp\
     testdeletedirectory.cpp\
+<<<<<<< HEAD
     testcreatesubdirfile.cpp\
     testdeletesubdirfiles.cpp\
-    testcreatesubdirs.cpp\
+    testcreatesubdirs.cpp
+=======
     testmovefile.cpp\
     testmoveintodirectory.cpp
     #testmovefileoutside.cpp\
@@ -43,15 +45,18 @@ SOURCES += main.cpp \
     #testmovedirectory.cpp\
     #testmovedirectoryoutside.cpp\
     #testmovedirectoryinside.cpp
+>>>>>>> feature/testMoveFiles
 
 HEADERS += \
     testdeletefiles.h \
     testcreatefile.h \
     testcreatedirectory.h\
     testdeletedirectory.h\
+<<<<<<< HEAD
     testcreatesubdirfile.h\
     testdeletesubdirfiles.h\
     testcreatesubdirs.h\
+=======
     testmovefile.h\
     testmoveintodirectory.h\
     #testmovefileoutside.h\
@@ -59,4 +64,5 @@ HEADERS += \
     #testmovedirectory.h\
     #testmovedirectoryoutside.h\
     #testmovedirectoryinside.h\
+>>>>>>> feature/testMoveFiles
     testbase.h

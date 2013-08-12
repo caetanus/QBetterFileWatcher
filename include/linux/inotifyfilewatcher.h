@@ -20,13 +20,15 @@ extern int inotify_rm_watch (int __fd, int __wd);
 #include <errno.h>
 #include <QDebug>
 #include <QSocketNotifier>
-
+#include <QStack>
+#include <QQueue>
 #include <QObject>
 #include <QList>
 #include <QMap>
 #include <QDir>
 #include <QFileInfo>
 #include <QFile>
+#include <QTimer>
 
 #define CHILD_WATCH IN_ATTRIB | IN_CLOSE_WRITE | IN_CREATE | IN_DELETE |\
                     IN_MODIFY | IN_MOVE
@@ -40,30 +42,83 @@ extern int inotify_rm_watch (int __fd, int __wd);
 #define EVENT_SIZE (sizeof (struct inotify_event))
 #define EVENT_BUF_LEN (1024 * (EVENT_SIZE + 16))
 
-typedef struct {
-    int mask;
-    char* name;
-} InotifyEvents_t;
+class EventUtilsInotify{
+    static bool m_setup;
+    static QMap<int, QString> m_evs;
+    static inline void setup()
+    {
+        if (m_setup)
+            return;
+        m_evs[IN_ACCESS] = "IN_ACCESS";
+        m_evs[IN_ATTRIB] = "IN_ATTRIB";
+        m_evs[IN_CLOSE_WRITE] = "IN_CLOSE_WRITE";
+        m_evs[IN_CLOSE_NOWRITE] = "IN_CLOSE_NOWRITE";
+        m_evs[IN_CREATE] = "IN_CREATE";
+        m_evs[IN_DELETE] = "IN_DELETE";
+        m_evs[IN_DELETE_SELF] = "IN_DELETE_SELF";
+        m_evs[IN_MODIFY] = "IN_MODIFY";
+        m_evs[IN_MOVE_SELF] = "IN_MOVE_SELF";
+        m_evs[IN_MOVED_FROM] = "IN_MOVED_FROM";
+        m_evs[IN_MOVED_TO] = "IN_MOVED_TO";
+        m_evs[IN_OPEN] = "IN_OPEN";
+        m_evs[IN_CLOEXEC] = "IN_CLOEXEC";
+        m_evs[IN_CLOSE] = "IN_CLOSE";
+        m_evs[IN_DONT_FOLLOW] = "IN_DONT_FOLLOW";
+        m_evs[IN_EXCL_UNLINK] = "IN_EXCL_UNLINK";
+        m_evs[IN_IGNORED] = "IN_IGNORED";
+        m_evs[IN_ISDIR] = "IN_ISDIR";
+        m_evs[IN_MASK_ADD] = "IN_MASK_ADD";
+        m_evs[IN_UNMOUNT] = "IN_UNMOUNT";
+        m_evs[IN_Q_OVERFLOW] = "IN_Q_OVERFLOW";
+        m_setup = true;
+    }
+
+public:
+    static inline QStringList translateEvent(inotify_event* ev)
+    {
+        QStringList ret;
+        setup();
+        for (int i = 0; i < 64; i++)
+        {
+            int evid = 1 << i;
+            if (ev->mask & evid && m_evs.contains(evid))
+                ret << m_evs[evid];
+            else if(ev->mask & evid)
+                ret << "Unknown Event";
+        }
+        return ret;
+    }
+
+};
 
 
 
 
-class InotifyFileWatcher : public QObject
+class INotifyFileWatcher : public QObject
 {
+    enum FSObjectType{
+        File,
+        Directory
+    };
     Q_OBJECT
     char m_buffer[EVENT_BUF_LEN];
     int m_fd;
     bool m_started;
+    QQueue< QPair<FSObjectType,QString> > m_moveEventQueue;
+    QQueue<QTimer*> m_moveEventDequeuer;
+
     QSocketNotifier *m_notifier;
     QMap<int, QString> m_handlesDirectory;
     QMap<QString, int> m_directoryHandles;
     void fetchSubDirectories(QString path);
+    void onMovedFromEvent();
+    bool deQueueMovedTimer();
     inline QString getEventFileName(inotify_event* e)
     {
         return m_handlesDirectory[e->wd] + QDir::separator() + QString(e->name);
     }
 public:
-    explicit InotifyFileWatcher();
+    explicit INotifyFileWatcher();
     void start();
     void stop();
     bool watchDirectory(QString path, bool child=false);
@@ -71,10 +126,14 @@ public:
     QList<QString> directoriesWatching();
     bool isWatchingDirectory(QString path);
     int getHandle();
+    void debug(QStringList debug);
 
-    ~InotifyFileWatcher();
+    ~INotifyFileWatcher();
     
 signals:
+#ifdef DEBUG_INFORMATION
+    void debugInformation(QStringList data);
+#endif
     void directoryCreated(QString path);
     void directoryDeleted(QString path);
     void directoryChanged(QString path);
@@ -85,5 +144,6 @@ signals:
     void fileUpdated(QString path);
 private slots:
     void eventCallback();
+    void unStackerMoves();
 };
 

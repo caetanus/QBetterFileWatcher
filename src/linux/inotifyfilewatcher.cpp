@@ -221,7 +221,7 @@ void INotifyFileWatcher::eventCallback()
 
             }
 #ifdef DEBUG_INFORMATION
-                emit debugInformation(EventUtilsInotify::translateEvent(event) << getEventFileName(event));
+            emit debugInformation(EventUtilsInotify::translateEvent(event) << getEventFileName(event));
 #endif
         }
         i += EVENT_SIZE + event->len;

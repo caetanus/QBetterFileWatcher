@@ -39,12 +39,16 @@ linux {
     HEADERS += include/linux/inotifyfilewatcher.h
 }
 
-SOURCES += src/qbetterfilewatcher.cpp \
-    include/linux/windowswatcher.cpp
+win32 {
+    INCLUDEPATH += include/windows
+    SOURCES += src/windows/windowswatcher.cpp
+    HEADERS += include/windows/windowswatcher.h
+}
 
 
-HEADERS += include/qbetterfilewatcher.h \
-    include/linux/windowswatcher.h
+SOURCES += src/qbetterfilewatcher.cpp
+HEADERS += include/qbetterfilewatcher.h
+
 
 INCLUDEPATH += src
 

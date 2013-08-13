@@ -30,6 +30,8 @@ extern int inotify_rm_watch (int __fd, int __wd);
 #include <QFile>
 #include <QTimer>
 
+#include "AbstractWatcher.h"
+
 #define CHILD_WATCH IN_ATTRIB | IN_CLOSE_WRITE | IN_CREATE | IN_DELETE |\
                     IN_MODIFY | IN_MOVE
 
@@ -94,7 +96,7 @@ public:
 
 
 
-class INotifyFileWatcher : public QObject
+class INotifyFileWatcher : public AbstractWatcher
 {
     enum FSObjectType{
         File,
@@ -117,31 +119,17 @@ class INotifyFileWatcher : public QObject
     {
         return m_handlesDirectory[e->wd] + QDir::separator() + QString(e->name);
     }
+    QList<QString> directoriesWatching();
 public:
     explicit INotifyFileWatcher();
     void start();
     void stop();
     bool watchDirectory(QString path, bool child=false);
     bool unwatchDirectory(QString path);
-    QList<QString> directoriesWatching();
     bool isWatchingDirectory(QString path);
     int getHandle();
-    void debug(QStringList debug);
-
     ~INotifyFileWatcher();
-    
-signals:
-#ifdef DEBUG_INFORMATION
-    void debugInformation(QStringList data);
-#endif
-    void directoryCreated(QString path);
-    void directoryDeleted(QString path);
-    void directoryChanged(QString path);
-    void directoryMoved(QString oldPath, QString newPath);
-    void fileCreated(QString path);
-    void fileDeleted(QString path);
-    void fileMoved(QString oldPath, QString newPath);
-    void fileUpdated(QString path);
+
 private slots:
     void eventCallback();
     void unStackerMoves();

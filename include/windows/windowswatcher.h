@@ -3,9 +3,16 @@
 #include <windows.h>
 #include <QMap>
 #include <QSocketNotifier>
+#include <private/qwineventnotifier_p.h>
 
 
 #include <QObject>
+#include <QDebug>
+#include <QSet>
+#include <QDir>
+#include <QQueue>
+
+#include "AbstractWatcher.h"
 
 #define SELF_WATCH FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE |\
                    FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_ATTRIBUTES |\
@@ -14,17 +21,11 @@
 
 static const int RESULT_SIZE = 8192;
 
-struct MyOVERLAPPED {
-    LPVOID Internal;
-    LPVOID InternalHigh;
-    DWORD Offset;
-    DWORD OffsetHigh;
-    LPVOID Pointer;
-    HANDLE hEvent;
-};
 
-class WindowsWatcher : public QObject
+class WindowsWatcher : public AbstractWatcher
 {
+    Q_OBJECT
+
     enum RecursiveWatch {
         WatchNotRecursive = false,
         WatchRecursive = true
@@ -34,27 +35,32 @@ class WindowsWatcher : public QObject
         File,
         Directory
     };
-    MyOVERLAPPED m_overlapped;
+    OVERLAPPED m_overlapped;
     char m_result[RESULT_SIZE];
-    QSocketNotifier* m_notifier;
+    QWinEventNotifier* m_notifier;
     HANDLE m_fd;
+    QString m_watchingPath;
+    QSet<QString> m_subdirs;
+    QQueue<QString> m_moveQueue;
 
     void asyncQueryDirectoryChanges();
+    void enumSubDirectories(QString path);
 
 
-    Q_OBJECT
 public:
-    explicit WindowsWatcher(QObject *parent = 0);
+    explicit WindowsWatcher();
     bool watchDirectory(QString path);
+    bool unwatchDirectory(QString path);
+    int getHandle();
+
     void start();
-    
-signals:
+    void stop();
+    ~WindowsWatcher();
 
 private slots:
     void eventCallback();
-    
+
 public slots:
-    
+
 };
 
-#endif // WINDOWSWATCHER_H

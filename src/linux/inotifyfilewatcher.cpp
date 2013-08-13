@@ -101,12 +101,6 @@ int INotifyFileWatcher::getHandle()
     return m_fd;
 }
 
-void INotifyFileWatcher::debug(QStringList debugInfo){
-#ifdef DEBUG_INFORMATION
-    emit debugInformation(debugInfo);
-#endif
-}
-
 void INotifyFileWatcher::eventCallback()
 {
     int lenght = read(m_fd, m_buffer, EVENT_BUF_LEN);

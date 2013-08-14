@@ -127,7 +127,6 @@ public:
     bool watchDirectory(QString path, bool child=false);
     bool unwatchDirectory(QString path);
     bool isWatchingDirectory(QString path);
-    int getHandle();
     ~INotifyFileWatcher();
 
 private slots:

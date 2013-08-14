@@ -96,10 +96,6 @@ void INotifyFileWatcher::stop()
 }
 
 
-int INotifyFileWatcher::getHandle()
-{
-    return m_fd;
-}
 
 void INotifyFileWatcher::eventCallback()
 {

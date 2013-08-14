@@ -2,6 +2,9 @@
 #include <QObject>
 #include <QStringList>
 #include <QBetterFileWatcher>
+#include <QSocketNotifier>
+#include <QCoreApplication>
+
 
 class Watcher: public QBetterFileWatcher
 {
@@ -31,4 +34,4 @@ int main(int argc, char *argv[])
     return a.exec();
 }
 
-#include "../../shadow_build/main.moc"
+#include "main.moc"

@@ -10,14 +10,15 @@
 #include <QDebug>
 #include <QSet>
 #include <QDir>
+#include <QMap>
 #include <QQueue>
 
 #include "AbstractWatcher.h"
 
-#define SELF_WATCH FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE |\
-                   FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_ATTRIBUTES |\
-                   FILE_NOTIFY_CHANGE_SIZE | FILE_NOTIFY_CHANGE_LAST_WRITE |\
-                   FILE_NOTIFY_CHANGE_SECURITY
+#define SELF_WATCH FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME |\
+                   FILE_NOTIFY_CHANGE_ATTRIBUTES | FILE_NOTIFY_CHANGE_SIZE |\
+                   FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_SECURITY
+
 
 static const int RESULT_SIZE = 8192;
 
@@ -35,15 +36,17 @@ class WindowsWatcher : public AbstractWatcher
         File,
         Directory
     };
-    OVERLAPPED m_overlapped;
-    char m_result[RESULT_SIZE];
-    QWinEventNotifier* m_notifier;
-    HANDLE m_fd;
-    QString m_watchingPath;
-    QSet<QString> m_subdirs;
-    QQueue<QString> m_moveQueue;
+    QMap<HANDLE, OVERLAPPED*> m_overlappeds;
+    QMap<HANDLE, char*> m_results;
+    QMap<HANDLE, QWinEventNotifier*> m_notifiers;
+    QMap<QString, HANDLE> m_watchingPaths;
+    QMap<HANDLE, QString> m_watchingPathsHandles;
+    QMap<QString, QSet<QString> > m_subdirs;
+    QMap<HANDLE, QQueue<QString> > m_moveQueue;
+    QMap<HANDLE, HANDLE> m_fileHandle;
 
-    void asyncQueryDirectoryChanges();
+    void asyncQueryDirectoryChanges(HANDLE fd);
+    void enumSubDirectories(QString path, QString basePath);
     void enumSubDirectories(QString path);
 
 
@@ -51,14 +54,13 @@ public:
     explicit WindowsWatcher();
     bool watchDirectory(QString path);
     bool unwatchDirectory(QString path);
-    int getHandle();
 
     void start();
     void stop();
     ~WindowsWatcher();
 
 private slots:
-    void eventCallback();
+    void eventCallback(HANDLE fd);
 
 public slots:
 

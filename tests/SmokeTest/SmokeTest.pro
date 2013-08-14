@@ -13,14 +13,18 @@ QT       += core
 QT       -= gui
 
 shadow_build {
-    OBJECTS_DIR = $$PWD/../../shadow_build
-    MOC_DIR = $$PWD/../../shadow_build
-    RCC_DIR = $$PWD/../../shadow_build
-    UI_DIR = $$PWD/../../shadow_build
+    SHADOW_PATH = $$PWD/../../shadow_build/
+    DEPENDPATH += $$SHADOW_PATH
+    INCLUDEPATH += $$SHADOW_PATH
+    OBJECTS_DIR = $$SHADOW_PATH
+    MOC_DIR = $$SHADOW_PATH
+    RCC_DIR = $$SHADOW_PATH
+    UI_DIR = $$SHADOW_PATH
 
 }
 
 TARGET = $$PWD/../../SmokeTest
+win32: TARGET = ./../../../SmokeTest
 CONFIG   += console
 CONFIG   -= app_bundle
 

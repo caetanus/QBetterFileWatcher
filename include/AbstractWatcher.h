@@ -14,7 +14,6 @@ public:
     virtual void stop() = 0;
     virtual bool watchDirectory(QString path) = 0;
     virtual bool unwatchDirectory(QString path) = 0;
-    virtual int getHandle() = 0;
 
 protected:
     void debug(QStringList debugInfo);

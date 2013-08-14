@@ -1,31 +1,4 @@
 #include "windowswatcher.h"
-#include <windows.h>
-
-void getLastError(LPWSTR lpszFunction)
-{
-    // Retrieve the system error message for the last-error code
-
-    LPVOID lpMsgBuf;
-    DWORD dw = GetLastError();
-    if (dw == ERROR_SUCCESS)
-        return;
-
-    FormatMessageW(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER |
-        FORMAT_MESSAGE_FROM_SYSTEM |
-        FORMAT_MESSAGE_IGNORE_INSERTS,
-        NULL,
-        dw,
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        (LPWSTR) &lpMsgBuf,
-        0, NULL );
-
-    // Display the error message and exit the process
-    qDebug() << (wchar_t*)lpszFunction << (wchar_t*)lpMsgBuf;
-
-    LocalFree(lpMsgBuf);
-}
-
 
 
 void WindowsWatcher::asyncQueryDirectoryChanges(HANDLE fd)
@@ -34,7 +7,6 @@ void WindowsWatcher::asyncQueryDirectoryChanges(HANDLE fd)
     m_overlappeds[fd] = overlapped;
     memset(overlapped, 0, sizeof(OVERLAPPED));
     void* result = (void*)m_results[fd];
-    //memset(result, 0, RESULT_SIZE);
     HANDLE file_handle = m_fileHandle[fd];
     ::ReadDirectoryChangesW(file_handle, result, RESULT_SIZE, true,
                             SELF_WATCH, NULL, overlapped, NULL);
@@ -93,13 +65,11 @@ bool WindowsWatcher::watchDirectory(QString path)
     m_watchingPaths[path] = fd;
     m_watchingPathsHandles[fd] = path;
     m_results[fd] = new char[RESULT_SIZE];
+
     if (fd == INVALID_HANDLE_VALUE)
     {
-        qDebug() << "Unable to watch directory:" << path << ".";
+        qCritical(); << "Unable to watch directory:" << path << ".";
         return false;
-    }
-    else {
-        qDebug() << "watching directory: " << path;
     }
     if (m_notifiers.contains(fd))
     {
@@ -162,7 +132,6 @@ void WindowsWatcher::stop()
 void WindowsWatcher::eventCallback(HANDLE fd)
 {
     FindNextChangeNotification(fd);
-    getLastError((LPWSTR)L"FindNextChange eventCallback");
     int nextEntry = 1;
     int pos = 0;
     char* result = m_results[fd];
@@ -173,17 +142,13 @@ void WindowsWatcher::eventCallback(HANDLE fd)
     if (!bytesRead)
         return;
 
-    qDebug() << "event file descriptor" << fd << path;
-
     while (nextEntry)
     {
         FILE_NOTIFY_INFORMATION* event = (FILE_NOTIFY_INFORMATION*)(result + pos);
         nextEntry = event->NextEntryOffset;
         pos += nextEntry;
-        qDebug() << pos << nextEntry;
 
         QString eventName = path + QDir::separator() + QString::fromWCharArray(event->FileName, event->FileNameLength / sizeof(wchar_t));
-        qDebug() << event->Action;
         switch (event->Action)
         {
         case 0:
@@ -200,7 +165,6 @@ void WindowsWatcher::eventCallback(HANDLE fd)
             }
             break;
         case FILE_ACTION_ADDED:
-            qDebug() << eventName << QDir(eventName).exists();
 
             if (QDir(eventName).exists())
             {
@@ -215,7 +179,7 @@ void WindowsWatcher::eventCallback(HANDLE fd)
             }
             break;
         case FILE_ACTION_MODIFIED:
-            if (m_subdirs.contains(eventName))
+            if (m_subdirs[path].contains(eventName))
             {
                 debug(QStringList() << "DirectoryUpdated" << eventName);
                 emit directoryChanged(eventName);
@@ -227,7 +191,6 @@ void WindowsWatcher::eventCallback(HANDLE fd)
             }
             break;
         case FILE_ACTION_REMOVED:
-            qDebug() << "Deleted and don't know yet what is it." << eventName;
             if (m_subdirs[path].contains(eventName))
             {
                 m_subdirs[path].remove(eventName);
@@ -262,15 +225,7 @@ void WindowsWatcher::eventCallback(HANDLE fd)
 
             }
         }
-        bool retValue = GetOverlappedResult(fd, oldOverlapped, &bytesRead, true);
-        qDebug() << "bytes read" << bytesRead;
-        getLastError((LPWSTR)L"eventCallback");
         delete oldOverlapped;
-
-        /*if (!retValue)
-        {
-            qCritical() << "WindowsFileWatcher Error:" << GetLastError();
-        }*/
         asyncQueryDirectoryChanges(fd);
     }
 

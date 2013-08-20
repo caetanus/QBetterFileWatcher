@@ -12,10 +12,13 @@ develop {
 QT       -= gui
 
 shadow_build {
-    OBJECTS_DIR = $$PWD/shadow_build
-    MOC_DIR = $$PWD/shadow_build
-    RCC_DIR = $$PWD/shadow_build
-    UI_DIR = $$PWD/shadow_build
+    SHADOW_PATH = $$PWD/shadow_build/
+    DEPENDPATH += $$SHADOW_PATH
+    INCLUDEPATH += $$SHADOW_PATH
+    OBJECTS_DIR = $$SHADOW_PATH
+    MOC_DIR = $$SHADOW_PATH
+    RCC_DIR = $$SHADOW_PATH
+    UI_DIR = $$SHADOW_PATH
 
 }
 
@@ -24,7 +27,7 @@ shadow_build {
  contains(UNAME, Linux): CONFIG += linux
 }
 
-TARGET = lib/QBetterFileWatcher
+TARGET = ./lib/QBetterFileWatcher
 TEMPLATE = lib
 CONFIG += staticlib
 
@@ -39,10 +42,18 @@ linux {
     HEADERS += include/linux/inotifyfilewatcher.h
 }
 
-SOURCES += src/qbetterfilewatcher.cpp
+win32 {
+    INCLUDEPATH += include/windows
+    SOURCES += src/windows/windowswatcher.cpp
+    HEADERS += include/windows/windowswatcher.h
+}
 
 
-HEADERS += include/qbetterfilewatcher.h
+SOURCES += src/qbetterfilewatcher.cpp \
+    src/AbstractWatcher.cpp
+HEADERS += include/qbetterfilewatcher.h \
+    include/AbstractWatcher.h
+
 
 INCLUDEPATH += src
 

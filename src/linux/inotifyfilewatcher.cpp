@@ -32,6 +32,11 @@ void INotifyFileWatcher::fetchSubDirectories(QString path)
     }
 }
 
+bool INotifyFileWatcher::watchDirectory(QString path)
+{
+    return watchDirectory(path, false);
+}
+
 bool INotifyFileWatcher::watchDirectory(QString path, bool child)
 {
     path = QDir(path).absolutePath();
@@ -96,16 +101,6 @@ void INotifyFileWatcher::stop()
 }
 
 
-int INotifyFileWatcher::getHandle()
-{
-    return m_fd;
-}
-
-void INotifyFileWatcher::debug(QStringList debugInfo){
-#ifdef DEBUG_INFORMATION
-    emit debugInformation(debugInfo);
-#endif
-}
 
 void INotifyFileWatcher::eventCallback()
 {
@@ -221,7 +216,7 @@ void INotifyFileWatcher::eventCallback()
 
             }
 #ifdef DEBUG_INFORMATION
-                emit debugInformation(EventUtilsInotify::translateEvent(event) << getEventFileName(event));
+            emit debugInformation(EventUtilsInotify::translateEvent(event) << getEventFileName(event));
 #endif
         }
         i += EVENT_SIZE + event->len;

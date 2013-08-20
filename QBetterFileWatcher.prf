@@ -9,5 +9,12 @@ linux {
     INCLUDEPATH += $$PWD/include/linux
 }
 
-win32::LIBS += $$PWD/lib/libQBetterFileWatcher.a
+unix {
+    PRE_TARGETDEPS += $$PWD/lib/libQBetterFileWatcher.a
+}
+win32 {
+    PRE_TARGETDEPS += $$PWD/release/lib/libQBetterFileWatcher.a
+}
+
+win32::LIBS += $$PWD/release/lib/libQBetterFileWatcher.a
 unix::LIBS += -L$$PWD/lib -lQBetterFileWatcher

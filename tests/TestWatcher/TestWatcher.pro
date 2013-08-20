@@ -8,19 +8,23 @@ include(../../QBetterFileWatcher.prf)
 
 CONFIG += shadow_build
 
-shadow_build {
-    OBJECTS_DIR = $$PWD/../../shadow_build
-    MOC_DIR = $$PWD/../../shadow_build
-    UIC_DIR = $$PWD/../../shadow_build
-    RCC_DIR = $$PWD/../../shadow_build
-    UI_DIR = $$PWD/../../shadow_build
-
-}
-
 QT       += core
+
 QT       -= gui
 
+shadow_build {
+    SHADOW_PATH = $$PWD/../../shadow_build/
+    DEPENDPATH += $$SHADOW_PATH
+    INCLUDEPATH += $$SHADOW_PATH
+    OBJECTS_DIR = $$SHADOW_PATH
+    MOC_DIR = $$SHADOW_PATH
+    RCC_DIR = $$SHADOW_PATH
+    UI_DIR = $$SHADOW_PATH
+}
+
+
 TARGET = $$PWD/../../builds/TestWatcher
+win32: TARGET = ./../../../TestWatcher
 CONFIG   += console
 CONFIG   -= app_bundle
 

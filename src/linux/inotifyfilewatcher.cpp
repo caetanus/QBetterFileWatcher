@@ -89,7 +89,7 @@ bool INotifyFileWatcher::unwatchDirectory(QString path)
 void INotifyFileWatcher::start()
 {
     m_started = true;
-    connect(m_notifier, SIGNAL(activated(int)), this, SLOT(eventCallback()),  Qt::QueuedConnection);
+    connect(m_notifier, SIGNAL(activated(int)), this, SLOT(eventCallback()));
     m_notifier->setEnabled(true);
 }
 
@@ -220,6 +220,7 @@ void INotifyFileWatcher::eventCallback()
 #endif
         }
         i += EVENT_SIZE + event->len;
+
     }
 
 }

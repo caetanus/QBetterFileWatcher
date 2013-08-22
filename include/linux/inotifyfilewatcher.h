@@ -122,13 +122,15 @@ class INotifyFileWatcher : public AbstractWatcher
     bool watchDirectory(QString path, bool child);
 public:
     explicit INotifyFileWatcher();
+    QList<QString> directoriesWatching();
+    bool isWatchingDirectory(QString path);
+    ~INotifyFileWatcher();
+
+public slots:
     void start();
     void stop();
     bool watchDirectory(QString path);
     bool unwatchDirectory(QString path);
-    QList<QString> directoriesWatching();
-    bool isWatchingDirectory(QString path);
-    ~INotifyFileWatcher();
 
 private slots:
     void eventCallback();

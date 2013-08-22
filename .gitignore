@@ -1,4 +1,6 @@
 # Generated makefile
+*qt4-Debug
+*qt4-Releas
 shadow_build
 Makefile
 

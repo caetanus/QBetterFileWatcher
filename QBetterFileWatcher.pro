@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-CONFIG += shadow_build
+CONFIG += shadow_build develop
 
 develop {
     DEFINES += DEBUG_INFORMATION
@@ -19,7 +19,6 @@ shadow_build {
     MOC_DIR = $$SHADOW_PATH
     RCC_DIR = $$SHADOW_PATH
     UI_DIR = $$SHADOW_PATH
-
 }
 
 !win32:!macx{

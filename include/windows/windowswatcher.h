@@ -52,12 +52,13 @@ class WindowsWatcher : public AbstractWatcher
 
 public:
     explicit WindowsWatcher();
-    bool watchDirectory(QString path);
-    bool unwatchDirectory(QString path);
+    ~WindowsWatcher();
 
+public slots:
     void start();
     void stop();
-    ~WindowsWatcher();
+    bool watchDirectory(QString path);
+    bool unwatchDirectory(QString path);
 
 private slots:
     void eventCallback(HANDLE fd);

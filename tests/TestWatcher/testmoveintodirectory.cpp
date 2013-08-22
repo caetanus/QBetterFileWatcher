@@ -12,12 +12,12 @@ void MoveFileIntoDirectoryTestCase::setUp()
     createEvents = 0;
     selfCreateEvents.clear();
     createTemporaryDirectory();
-    m_subDir = m_tempPath + QDir::separator();
-    qDebug() << m_subDir;
+    m_subDir = m_tempPath + QDir::separator() + QUuid::createUuid().toByteArray();
     QDir().mkdir(m_subDir);
     m_randomFile = createRandomFile();
     m_randomFileNew = m_subDir +  QDir::separator() +
                         QUuid::createUuid().toByteArray();
+
     m_fwatcher = new QBetterFileWatcher();
     connect(m_fwatcher, SIGNAL(fileMoved(QString,QString)),
             this, SLOT(onFileMoved(QString, QString)));
@@ -41,12 +41,10 @@ void MoveFileIntoDirectoryTestCase::tearDown()
 void MoveFileIntoDirectoryTestCase::runTest()
 {
     m_running = true;
-    qDebug() << QFile::rename(m_randomFile, m_randomFileNew);
-    qDebug() << QDir(m_subDir).entryList();
+    QFile::rename(m_randomFile, m_randomFileNew);
     m_timeout = new QTimer(this);
     m_timeout->setSingleShot(true);
-    connect(m_timeout,SIGNAL(timeout()) , this, SLOT(onTimeout()));
-
+    connect(m_timeout,SIGNAL(timeout()), this, SLOT(onTimeout()));
     m_timeout->setInterval(100);
     m_timeout->start();
 
@@ -55,10 +53,8 @@ void MoveFileIntoDirectoryTestCase::runTest()
 
 void MoveFileIntoDirectoryTestCase::onFileMoved(QString oldFilePath, QString newFilePath)
 {
-    qDebug() << "foo";
     moveEvent.first = oldFilePath;
     moveEvent.second = newFilePath;
-    m_timeout->stop();
     if (oldFilePath == m_randomFile && newFilePath == m_randomFileNew)
         m_passed = true;
     stopTest();

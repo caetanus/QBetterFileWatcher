@@ -1,10 +1,10 @@
-#include <QCoreApplication>
+#include <QApplication>
 #include <QObject>
 #include <QStringList>
 #include <QBetterFileWatcher>
 #include <QSocketNotifier>
-#include <QCoreApplication>
-
+#include <QMainWindow>
+#include <QPushButton>
 
 class Watcher: public QBetterFileWatcher
 {
@@ -27,11 +27,19 @@ public slots:
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication a(argc, argv);
+    QApplication qapp(argc, argv);
     Watcher watcher;
+    QMainWindow w;
+    QPushButton b;
+    b.setParent(&w);
+    w.show();
+    b.setText("tha fockin bottom");
+    b.setMaximumSize(w.size());
+    b.setMinimumSize(w.size());
+    b.show();
     watcher.watchDirectory(argv[1]);
     watcher.start();
-    return a.exec();
+    return qapp.exec();
 }
 
 #include "main.moc"

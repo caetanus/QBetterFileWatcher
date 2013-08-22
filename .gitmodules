@@ -1,0 +1,3 @@
+[submodule "vendor/PythonQt"]
+	path = vendor/PythonQt
+	url = git@github.com:caetanus/PythonQt

@@ -10,7 +10,7 @@ CONFIG += shadow_build
 
 QT       += core
 
-QT       -= gui
+QT       += gui
 
 shadow_build {
     SHADOW_PATH = $$PWD/../../shadow_build/

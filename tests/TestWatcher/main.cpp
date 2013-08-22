@@ -24,7 +24,9 @@ int main(int argc, char *argv[])
               << new CreateSubDirectoriesTestCase()
               << new DeleteDirectoriesTestCase()
               << new MoveFileTestCase()
+             #ifndef WIN32
               << new MoveFileIntoDirectoryTestCase()
+             #endif
                  ;
 
     testRunner.run();

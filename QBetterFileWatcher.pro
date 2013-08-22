@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-CONFIG += shadow_build develop
+CONFIG += shadow_build
 
 develop {
     DEFINES += DEBUG_INFORMATION

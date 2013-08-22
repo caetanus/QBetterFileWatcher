@@ -38,7 +38,7 @@ bool rmTree(QString completePath)
 
 void TestBase::createTemporaryDirectory()
 {
-    QString path = QDir::tempPath() + QDir::separator() + QString("QBetterFileWatcherTest-") + QUuid::createUuid().toByteArray();
+    QString path = QDir::toNativeSeparators(QDir::tempPath() + QDir::separator() + QString("QBetterFileWatcherTest-") + QString(QUuid::createUuid().toByteArray()).left(4));
     QDir().mkpath(path);
     m_tempPath = path;
 }
@@ -53,13 +53,13 @@ QString TestBase::createRandomFile(bool randomParent, int size)
     QString parent = m_tempPath + QDir::separator();
     if (randomParent)
     {
-        parent + QDir::separator() + QUuid::createUuid().toByteArray() + QDir::separator();
+        parent + QDir::separator() + QString(QUuid::createUuid().toByteArray()).left(4) + QDir::separator();
         QDir().mkpath(parent);
     }
     char* data = (char*)malloc(size); //unitialized pointer, but.. who cares?
 
-    QFile tempFile(parent + QUuid::createUuid().toByteArray());
-    selfCreateEvents[tempFile.fileName()] = QDateTime::currentMSecsSinceEpoch();
+    QFile tempFile(parent + QString(QUuid::createUuid().toByteArray()).left(4) + ".test");
+    selfCreateEvents[QDir::toNativeSeparators(tempFile.fileName())] = QDateTime::currentMSecsSinceEpoch();
     tempFile.open(QIODevice::WriteOnly);
 
     tempFile.write(data, size);

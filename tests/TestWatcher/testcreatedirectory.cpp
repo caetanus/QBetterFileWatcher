@@ -40,7 +40,10 @@ void CreateDirectoriesTestCase::runTest()
         QDir().mkpath(path);
         selfCreateEvents[path] = QDateTime::currentMSecsSinceEpoch();
     }
-    //timeout.singleShot(3000, this, SLOT(stopTest()));
+    timeout.setInterval(500);
+    connect(&timeout, SIGNAL(timeout()), this, SLOT(stopTest()));
+    timeout.start();
+
 }
 
 
@@ -60,6 +63,7 @@ void CreateDirectoriesTestCase::onDirCreated(QString dirPath)
 
 void CreateDirectoriesTestCase::stopTest()
 {
+    timeout.stop();
     if(m_running)
     {
         bool passed = false;

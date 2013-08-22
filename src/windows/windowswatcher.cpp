@@ -1,9 +1,9 @@
 #include "windowswatcher.h"
 
-
 void WindowsWatcher::asyncQueryDirectoryChanges(HANDLE fd)
 {
     OVERLAPPED* overlapped = new OVERLAPPED;
+    overlapped->hEvent = CreateEventW(NULL, FALSE, FALSE, NULL);
     m_overlappeds[fd] = overlapped;
     memset(overlapped, 0, sizeof(OVERLAPPED));
     void* result = (void*)m_results[fd];
@@ -32,6 +32,7 @@ void WindowsWatcher::enumSubDirectories(QString path, QString basePath)
 
 WindowsWatcher::WindowsWatcher()
 {
+    m_started = false;
 }
 
 bool WindowsWatcher::watchDirectory(QString path)
@@ -61,27 +62,31 @@ bool WindowsWatcher::watchDirectory(QString path)
                                         true, SELF_WATCH);
 
     m_fileHandle[fd] = file_fd;
-
     m_watchingPaths[path] = fd;
     m_watchingPathsHandles[fd] = path;
     m_results[fd] = new char[RESULT_SIZE];
 
     if (fd == INVALID_HANDLE_VALUE)
     {
-        qCritical(); << "Unable to watch directory:" << path << ".";
+        qCritical()  << "Unable to watch directory:" << path << ".";
         return false;
     }
     if (m_notifiers.contains(fd))
     {
         disconnect(m_notifiers[fd], SIGNAL(activated(HANDLE)),
-                   this, SLOT(eventCallback(HANDLE)));
+                   this, SLOT(winEventCallback(HANDLE)));
         delete m_notifiers[fd];
     }
     m_notifiers[fd] = new QWinEventNotifier(fd);
     m_notifiers[fd]->setEnabled(false);
     enumSubDirectories(path);
     connect(m_notifiers[fd], SIGNAL(activated(HANDLE)),
-            this, SLOT(eventCallback(HANDLE)) );
+            this, SLOT(winEventCallback(HANDLE)) );
+    if (m_started)
+    {
+        asyncQueryDirectoryChanges(fd);
+        m_notifiers[fd]->setEnabled(true);
+    }
     return true;
 }
 
@@ -92,6 +97,8 @@ bool WindowsWatcher::unwatchDirectory(QString path)
     HANDLE fd = m_watchingPaths[path];
     HANDLE file_fd = m_fileHandle[fd];
     m_fileHandle.remove(fd);
+    OVERLAPPED *over = m_overlappeds[fd];
+    ::CloseHandle(over);
     ::CancelIo(fd);
     ::CloseHandle(file_fd);
     ::FindCloseChangeNotification(fd);
@@ -104,33 +111,46 @@ bool WindowsWatcher::unwatchDirectory(QString path)
     m_overlappeds.remove(fd);
     QWinEventNotifier* notifier = m_notifiers[fd];
     disconnect(notifier, SIGNAL(activated(HANDLE)),
-               this, SLOT(eventCallback(HANDLE)));
+               this, SLOT(winEventCallback(HANDLE)));
     m_notifiers.remove(fd);
     return true;
 }
 
 void WindowsWatcher::start()
 {
+    if (m_started)
+        return;
     foreach (HANDLE fd, m_notifiers.keys())
     {
-        QString path = m_watchingPathsHandles[fd];
         m_notifiers[fd]->setEnabled(true);
         asyncQueryDirectoryChanges(fd);
     }
+    m_started = true;
 
 }
 
 void WindowsWatcher::stop()
 {
+    if (!m_started)
+        return;
     foreach (QWinEventNotifier* notifier, m_notifiers.values())
     {
         notifier->setEnabled(false);
     }
+    m_started = false;
 
 }
 
-void WindowsWatcher::eventCallback(HANDLE fd)
+void WindowsWatcher::winEventCallback(HANDLE fd)
 {
+    //transfer the event to the main thread.
+    metaObject()->invokeMethod(this, "eventCallback" , Qt::AutoConnection, Q_ARG(int, (int)fd));
+}
+
+void WindowsWatcher::eventCallback(int winfd)
+{
+    qDebug() << "foo";
+    HANDLE fd = (HANDLE)winfd;
     FindNextChangeNotification(fd);
     int nextEntry = 1;
     int pos = 0;
@@ -140,7 +160,11 @@ void WindowsWatcher::eventCallback(HANDLE fd)
     DWORD bytesRead;
     GetOverlappedResult(fd, oldOverlapped, &bytesRead, true);
     if (!bytesRead)
+    {
+        qDebug() << "no buffer!";
+        //asyncQueryDirectoryChanges(fd);
         return;
+    }
 
     while (nextEntry)
     {
@@ -156,12 +180,12 @@ void WindowsWatcher::eventCallback(HANDLE fd)
             {
                 m_subdirs[path].insert(eventName);
                 debug(QStringList() << "UnknownEvent" << eventName);
-                emit directoryCreated(eventName);
+                throw QString("UnknownEventError");
             }
             else
             {
                 debug(QStringList() << "UnknownEvent" << eventName);
-                emit fileCreated(eventName);
+                throw QString("UnknownEventError");
             }
             break;
         case FILE_ACTION_ADDED:
@@ -169,24 +193,24 @@ void WindowsWatcher::eventCallback(HANDLE fd)
             if (QDir(eventName).exists())
             {
                 m_subdirs[path].insert(eventName);
-                debug(QStringList() << "DirectoryCreated" << eventName);
+                //debug(QStringList() << "DirectoryCreated" << eventName);
                 emit directoryCreated(eventName);
             }
             else
             {
-                debug(QStringList() << "FileCreated" << eventName);
+                //debug(QStringList() << "FileCreated" << eventName);
                 emit fileCreated(eventName);
             }
             break;
         case FILE_ACTION_MODIFIED:
             if (m_subdirs[path].contains(eventName))
             {
-                debug(QStringList() << "DirectoryUpdated" << eventName);
+                //debug(QStringList() << "DirectoryUpdated" << eventName);
                 emit directoryChanged(eventName);
             }
             else
             {
-                debug(QStringList() << "FileUpdated" << eventName);
+                //debug(QStringList() << "FileUpdated" << eventName);
                 emit fileUpdated(eventName);
             }
             break;
@@ -195,12 +219,12 @@ void WindowsWatcher::eventCallback(HANDLE fd)
             {
                 m_subdirs[path].remove(eventName);
 
-                debug(QStringList() << "DirectoryDeleted" << eventName);
+                //debug(QStringList() << "DirectoryDeleted" << eventName);
                 emit directoryDeleted(eventName);
             }
             else
             {
-                debug(QStringList() << "FileDeleted" << eventName);
+                //debug(QStringList() << "FileDeleted" << eventName);
                 emit fileDeleted(eventName);
             }
             break;
@@ -214,17 +238,18 @@ void WindowsWatcher::eventCallback(HANDLE fd)
                 {
                     m_subdirs[path].insert(eventName);
                     m_subdirs[path].remove(oldName);
-                    debug(QStringList() << "DirectoryMoved" << oldName << eventName);
+                    //debug(QStringList() << "DirectoryMoved" << oldName << eventName);
                     emit directoryMoved(oldName, eventName);
                 }
                 else
                 {
-                    debug(QStringList() << "FileMoved" << oldName << eventName);
+                    //debug(QStringList() << "FileMoved" << oldName << eventName);
                     emit fileMoved(oldName, eventName);
                 }
 
             }
         }
+        CloseHandle(oldOverlapped->hEvent);
         delete oldOverlapped;
         asyncQueryDirectoryChanges(fd);
     }
@@ -240,3 +265,4 @@ WindowsWatcher::~WindowsWatcher()
     }
     stop();
 }
+

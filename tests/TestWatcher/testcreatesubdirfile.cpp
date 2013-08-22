@@ -37,7 +37,9 @@ void CreateSubdirFileTestCase::runTest()
     {
         createRandomFile(true);
     }
-    //timeout.singleShot(3000, this, SLOT(stopTest()));
+    timeout.setInterval(200);
+    connect(&timeout, SIGNAL(timeout()), this, SLOT(stopTest()));
+    timeout.start();
 }
 
 
@@ -57,6 +59,7 @@ void CreateSubdirFileTestCase::onFileCreated(QString filepath)
 
 void CreateSubdirFileTestCase::stopTest()
 {
+    timeout.stop();
     if(m_running)
     {
         bool passed = false;

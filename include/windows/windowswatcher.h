@@ -20,7 +20,7 @@
                    FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_SECURITY
 
 
-static const int RESULT_SIZE = 8192;
+static const int RESULT_SIZE = 131072;
 
 
 class WindowsWatcher : public AbstractWatcher
@@ -48,6 +48,7 @@ class WindowsWatcher : public AbstractWatcher
     void asyncQueryDirectoryChanges(HANDLE fd);
     void enumSubDirectories(QString path, QString basePath);
     void enumSubDirectories(QString path);
+    bool m_started;
 
 
 public:
@@ -61,7 +62,9 @@ public slots:
     bool unwatchDirectory(QString path);
 
 private slots:
-    void eventCallback(HANDLE fd);
+    void winEventCallback(HANDLE fd);
+    void eventCallback(int fd);
+signals:
 
 public slots:
 

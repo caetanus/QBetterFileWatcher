@@ -20,10 +20,11 @@ void CreateFilesTestCase::setUp()
 
 void CreateFilesTestCase::tearDown()
 {
+    return;
     disconnect(this, SLOT(onFileCreated(QString)));
     m_fwatcher->unwatchDirectory(m_tempPath);
     m_fwatcher->stop();
-    //rmTree(m_tempPath);
+    rmTree(m_tempPath);
     delete m_fwatcher;
     m_fwatcher = NULL;
 }
@@ -37,7 +38,7 @@ void CreateFilesTestCase::runTest()
     {
         createRandomFile();
     }
-    timeout.setInterval(2000);
+    timeout.setInterval(120);
     connect(&timeout, SIGNAL(timeout()), this, SLOT(stopTest()));
     timeout.start();
 }
@@ -51,7 +52,6 @@ void CreateFilesTestCase::onFileCreated(QString filepath)
     if (!selfCreateEvents.count())
     {
         //test has already passed.
-        disconnect(this, SLOT(stopTest()));
         timeout.stop();
         stopTest();
     }
@@ -60,6 +60,7 @@ void CreateFilesTestCase::onFileCreated(QString filepath)
 void CreateFilesTestCase::stopTest()
 {
     timeout.stop();
+    stopTest();
     if(m_running)
     {
         bool passed = false;

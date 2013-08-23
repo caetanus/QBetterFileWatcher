@@ -43,6 +43,7 @@ bool WindowsWatcher::watchDirectory(QString path)
         return false;
     }
     path = QDir::toNativeSeparators(QDir(path).absolutePath());
+    qDebug() << "watching path";
     foreach(QSet<QString> subdirs, m_subdirs.values())
     {
         if (subdirs.contains(path))
@@ -74,14 +75,14 @@ bool WindowsWatcher::watchDirectory(QString path)
     if (m_notifiers.contains(fd))
     {
         disconnect(m_notifiers[fd], SIGNAL(activated(HANDLE)),
-                   this, SLOT(winEventCallback(HANDLE)));
+                   this, SLOT(eventCallback(HANDLE)));
         delete m_notifiers[fd];
     }
     m_notifiers[fd] = new QWinEventNotifier(fd);
     m_notifiers[fd]->setEnabled(false);
     enumSubDirectories(path);
     connect(m_notifiers[fd], SIGNAL(activated(HANDLE)),
-            this, SLOT(winEventCallback(HANDLE)) );
+            this, SLOT(eventCallback(HANDLE)) );
     if (m_started)
     {
         asyncQueryDirectoryChanges(fd);
@@ -95,23 +96,24 @@ bool WindowsWatcher::unwatchDirectory(QString path)
     if (!m_watchingPaths.contains(path))
         return false;
     HANDLE fd = m_watchingPaths[path];
+    m_watchingPaths.remove(path);
+    ::FindCloseChangeNotification(fd);
     HANDLE file_fd = m_fileHandle[fd];
     m_fileHandle.remove(fd);
     OVERLAPPED *over = m_overlappeds[fd];
-    ::CloseHandle(over);
-    ::CancelIo(fd);
+    ::CloseHandle(over->hEvent);
+    //delete over;
+    //::CancelIo(fd);
     ::CloseHandle(file_fd);
-    ::FindCloseChangeNotification(fd);
-    m_watchingPaths.remove(path);
     m_watchingPathsHandles.remove(fd);
     m_subdirs.remove(path);
-    delete m_results[fd];
+    //delete m_results[fd];
     m_results.remove(fd);
-    delete m_overlappeds[fd];
+    //delete m_overlappeds[fd];
     m_overlappeds.remove(fd);
     QWinEventNotifier* notifier = m_notifiers[fd];
     disconnect(notifier, SIGNAL(activated(HANDLE)),
-               this, SLOT(winEventCallback(HANDLE)));
+               this, SLOT(eventCallback(HANDLE)));
     m_notifiers.remove(fd);
     return true;
 }
@@ -136,6 +138,7 @@ void WindowsWatcher::stop()
     foreach (QWinEventNotifier* notifier, m_notifiers.values())
     {
         notifier->setEnabled(false);
+        disconnect(this, SLOT(eventCallback(HANDLE)));
     }
     m_started = false;
 
@@ -147,10 +150,10 @@ void WindowsWatcher::winEventCallback(HANDLE fd)
     metaObject()->invokeMethod(this, "eventCallback" , Qt::AutoConnection, Q_ARG(int, (int)fd));
 }
 
-void WindowsWatcher::eventCallback(int winfd)
+void WindowsWatcher::eventCallback(HANDLE fd)
 {
-    qDebug() << "foo";
-    HANDLE fd = (HANDLE)winfd;
+
+    //HANDLE fd = (HANDLE)winfd;
     FindNextChangeNotification(fd);
     int nextEntry = 1;
     int pos = 0;
@@ -162,7 +165,11 @@ void WindowsWatcher::eventCallback(int winfd)
     if (!bytesRead)
     {
         qDebug() << "no buffer!";
-        //asyncQueryDirectoryChanges(fd);
+        ::CloseHandle(oldOverlapped->hEvent);
+        delete oldOverlapped;
+        QString directory = m_watchingPathsHandles[fd];
+        unwatchDirectory(directory);
+        emit failWatchingDirectory(directory);
         return;
     }
 
@@ -249,9 +256,9 @@ void WindowsWatcher::eventCallback(int winfd)
 
             }
         }
+        asyncQueryDirectoryChanges(fd);
         CloseHandle(oldOverlapped->hEvent);
         delete oldOverlapped;
-        asyncQueryDirectoryChanges(fd);
     }
 
 
@@ -259,10 +266,11 @@ void WindowsWatcher::eventCallback(int winfd)
 
 WindowsWatcher::~WindowsWatcher()
 {
+    stop();
+    return;
     foreach (QString path, m_watchingPaths.keys())
     {
         unwatchDirectory(path);
     }
-    stop();
 }
 

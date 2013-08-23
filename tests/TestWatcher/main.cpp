@@ -16,17 +16,17 @@ int main(int argc, char *argv[])
 
     TestRunner testRunner;
     testRunner
-              << new CreateFilesTestCase()
               << new CreateSubdirFileTestCase()
               << new DeleteFilesTestCase()
               << new DeleteSubdirFilesTestCase()
               << new CreateDirectoriesTestCase()
-              << new CreateSubDirectoriesTestCase()
+              //<< new CreateSubDirectoriesTestCase()
               << new DeleteDirectoriesTestCase()
-              << new MoveFileTestCase()
+              //<< new MoveFileTestCase()
              #ifndef WIN32
               << new MoveFileIntoDirectoryTestCase()
              #endif
+              << new CreateFilesTestCase()
                  ;
 
     testRunner.run();

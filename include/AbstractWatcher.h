@@ -22,6 +22,7 @@ signals:
 #ifdef DEBUG_INFORMATION
     void debugInformation(QStringList data);
 #endif
+    void failWatchingDirectory(QString path);
     void directoryCreated(QString path);
     void directoryDeleted(QString path);
     void directoryChanged(QString path);

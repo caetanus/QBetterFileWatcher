@@ -20,6 +20,7 @@ void CreateSubdirFileTestCase::setUp()
 
 void CreateSubdirFileTestCase::tearDown()
 {
+    return;
     disconnect(this, SLOT(onFileCreated(QString)));
     m_fwatcher->unwatchDirectory(m_tempPath);
     m_fwatcher->stop();

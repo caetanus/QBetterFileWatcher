@@ -20,7 +20,7 @@
                    FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_SECURITY
 
 
-static const int RESULT_SIZE = 131072;
+static const int RESULT_SIZE = 65535; // 64k
 
 
 class WindowsWatcher : public AbstractWatcher
@@ -63,7 +63,7 @@ public slots:
 
 private slots:
     void winEventCallback(HANDLE fd);
-    void eventCallback(int fd);
+    void eventCallback(HANDLE fd);
 signals:
 
 public slots:
